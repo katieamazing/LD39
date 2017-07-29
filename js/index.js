@@ -74,6 +74,74 @@ class TransitionDevice {
   }
 }
 
+class Space {
+  draw() {
+    // draw background
+    ctx.beginPath();
+    ctx.rect(0, 0, world.width, world.height);
+    ctx.fillStyle = "black";
+    ctx.fill();
+
+    // draw sparkly space bits
+    // TODO
+  }
+}
+
+class WineCellar {
+
+  draw() {
+    // draw background
+    ctx.beginPath();
+    ctx.rect(0, 0, world.width, world.height);
+    ctx.fillStyle = "black";
+    ctx.fill();
+
+    // draw sparkly space bits
+    // TODO
+
+    // draw wine room
+    ctx.drawImage(wine_room, 200, 200);
+  }
+}
+
+class Planet {
+  draw() {
+    // draw background
+    ctx.beginPath();
+    ctx.rect(0, 0, world.width, world.height);
+    ctx.fillStyle = "grey";
+    ctx.fill();
+
+    // draw terrain
+    // TODO(johnicholas): draw less, not all this can be seen
+    for (var row = 0; row < world.height/T; row++) {
+      for (var col = 0; col < world.width/T; col++) {
+        if (viewMap[row][col] == 'hole') {
+          ctx.drawImage(terrain_hole, col*T, row*T)
+        } else if (viewMap[row][col] == 'ceiling') {
+          ctx.drawImage(terrain_ceiling, col*T, row*T)
+        } else if (viewMap[row][col] == 'wall') {
+          // TODO(johnicholas): add an image to draw a wall
+          ctx.drawImage(terrain_ceiling, col*T, row*T)
+        } else if (viewMap[row][col] == 'floor') {
+          // ctx.drawImage(terrain_floor, col*T, row*T);
+        } else if (typeof viewMap[row][col] == 'number') {
+          // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
+          let spritesheet_index = viewMap[row][col];
+          ctx.drawImage(terrain_sheet1, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
+        } else {
+          // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
+          let row_in_sheet = viewMap[row][col].row;
+          let col_in_sheet = viewMap[row][col].col;
+          // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
+          ctx.drawImage(terrain_sheet2, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
+        }
+      }
+    }
+  }
+
+}
+
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 const T = 64; //tile size
@@ -85,12 +153,12 @@ let world =
   }
 
 let states =
-  { space: {bg: "black"}
-  , winecellar: {bg: "brown"}
-  , planet: {bg: "grey"}
+  { Space: new Space
+  , WineCellar: new WineCellar
+  , Planet: new Planet
   }
 
-let currentState = "planet";
+let currentState = "Planet";
 let keys = [];
 let typeMap = [];
 let viewMap = [];
@@ -110,8 +178,8 @@ let stuff =
   [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
   , new Ingredient(1340, 1500, 20, 15, "#ff0080")
   , new Ingredient(1700, 1017, 10, 5, "#0000ff")
-  , new TransitionDevice(1100, 1100, 10, 10, "#ff0000", "planet", "space")
-  , new TransitionDevice(1200, 1100, 10, 10, "#00ff00", "space", "winecellar")
+  , new TransitionDevice(1100, 1100, 10, 10, "#ff0000", "Planet", "Space")
+  , new TransitionDevice(1200, 1100, 10, 10, "#00ff00", "Space", "WineCellar")
   ]
 
 function sendWine(player, wine, shelf_number){
@@ -248,34 +316,6 @@ function makeViewMap() {
   }
 }
 
-function drawTerrain(){
-  // TODO(johnicholas): draw less, not all this can be seen
-  for (var row = 0; row < world.height/T; row++) {
-    for (var col = 0; col < world.width/T; col++) {
-      if (viewMap[row][col] == 'hole') {
-        ctx.drawImage(terrain_hole, col*T, row*T)
-      } else if (viewMap[row][col] == 'ceiling') {
-        ctx.drawImage(terrain_ceiling, col*T, row*T)
-      } else if (viewMap[row][col] == 'wall') {
-        // TODO(johnicholas): add an image to draw a wall
-        ctx.drawImage(terrain_ceiling, col*T, row*T)
-      } else if (viewMap[row][col] == 'floor') {
-        // ctx.drawImage(terrain_floor, col*T, row*T);
-      } else if (typeof viewMap[row][col] == 'number') {
-        // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
-        let spritesheet_index = viewMap[row][col];
-        ctx.drawImage(terrain_sheet1, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
-      } else {
-        // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
-        let row_in_sheet = viewMap[row][col].row;
-        let col_in_sheet = viewMap[row][col].col;
-        // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
-        ctx.drawImage(terrain_sheet2, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
-      }
-    }
-  }
-}
-
 function drawStuff(stuff){
   for (var i = 0; i < stuff.length; i++) {
     stuff[i].draw();
@@ -351,10 +391,10 @@ function update() {
   movePlayer(player);
 
   //now draw it
-  drawBackground(states[currentState].bg);
+
   ctx.save();
   ctx.translate(-1 * viewport.x, -1 * viewport.y);
-  drawTerrain();
+  states[currentState].draw();
   drawPlayer(player);
   drawStuff(stuff);
   ctx.restore();
