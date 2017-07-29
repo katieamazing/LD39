@@ -5,7 +5,6 @@
 })();
 
 class Ingredient {
-
   constructor (x, y, width, height, color) {
     this.x = x;
     this.y = y;
@@ -23,7 +22,7 @@ class Ingredient {
 
   action(){
     if (player.holding == null) {
-        player.holding = this;
+      player.holding = this;
     } else if (player.holding == this) {
       player.holding = null;
     }
@@ -32,6 +31,46 @@ class Ingredient {
   move(){ //move with player
     this.x = player.x;
     this.y = player.y;
+  }
+}
+
+// A transitiondevice acts like a two-way door between two adjacent states
+// for example, the launch thrusters are used to get from planets to space,
+// and from space to planets, while the warp drive is used to get from space
+// to the wine cellar and from the wine cellar to space.
+class TransitionDevice {
+  constructor (x, y, width, height, color, destination1, destination2) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.color = color;
+    this.destination1 = destination1;
+    this.destination2 = destination2;
+  }
+
+  draw() {
+    ctx.save();
+    if (currentState != this.destination1
+      && currentState != this.destination2) {
+        // unusable in this space, so fade out a little.
+        ctx.globalAlpha = 0.4;
+    }
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  action() {
+    if (currentState == this.destination1) {
+      currentState = this.destination2;
+    } else if (currentState == this.destination2) {
+      currentState = this.destination1;
+    } else {
+      // TODO(johnicholas): some sort of failure!
+    }
   }
 }
 
@@ -71,6 +110,8 @@ let stuff =
   [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
   , new Ingredient(1340, 1500, 20, 15, "#ff0080")
   , new Ingredient(1700, 1017, 10, 5, "#0000ff")
+  , new TransitionDevice(1100, 1100, 10, 10, "#ff0000", "planet", "space")
+  , new TransitionDevice(1200, 1100, 10, 10, "#00ff00", "space", "winecellar")
   ]
 
 function sendWine(player, wine, shelf_number){
