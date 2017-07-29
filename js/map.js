@@ -23,10 +23,10 @@ let rules = {
     { tileIndex: {row:4, col:1}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
 
     // --- Row 1 ---
-    { tileIndex: {row:1, col:0}, map: { nw:"!ceiling", n:"!ceiling", ne:"!ceiling", w:"!ceiling", e:"!ceiling", s:"ceiling"} },
+    { tileIndex: {row:1, col:0}, map: { n:"!ceiling", w:"!ceiling", e:"!ceiling", s:"ceiling"} },
     { tileIndex: {row:1, col:1}, map: { n:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"ceiling" } },
     { tileIndex: {row:0, col:4}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:0, col:6}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
+    { tileIndex: {row:5, col:6}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
     { tileIndex: {row:4, col:3}, map: { n:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"!ceiling" } },
     { tileIndex: {row:0, col:2}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
     { tileIndex: {row:0, col:6}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", sw:"!ceiling", s:"ceiling" } },
@@ -65,7 +65,7 @@ let rules = {
     { tileIndex: {row:0, col:5}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
     { tileIndex: {row:2, col:6}, map: { nw:"ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"!ceiling", s:"ceiling" } },
     { tileIndex: {row:5, col:0}, map: { n:"ceiling", ne:"ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:0, col:2}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
+    { tileIndex: {row:0, col:3}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
     { tileIndex: {row:3, col:5}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
     { tileIndex: {row:2, col:1}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
 
@@ -78,6 +78,9 @@ let rules = {
     { tileIndex: {row:1, col:6}, map: { nw:"!ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
     { tileIndex: {row:1, col:2}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
     { tileIndex: {row:5, col:5}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
+
+    // a lonely pillar
+    { tileIndex: {row:0, col:0}, map: { n:"!ceiling", w:"!ceiling", e:"!ceiling", s:"!ceiling", } },
   ],
   wall: []
 };

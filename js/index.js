@@ -113,31 +113,43 @@ function makeTypeMap(){
   for (var row = 0; row < world.height/T; row++) {
     typeMap[row] = [];
     for (var col = 0; col < world.width/T; col++) {
-      let index = Math.floor((Math.random()) * 3);
+      // TODO(johnicholas): change this back to 3, this is "lots of ceiling" testing.
+      let index = Math.floor((Math.random()) * 10);
       let type = null;
-      if (index == 0) {
-        type = 'floor';
-      } else if (index == 1) {
-        type = 'hole';
-      } else {
-        type = 'ceiling';
+      switch (Math.floor((Math.random()) * 10)) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          type = 'ceiling';
+          break;
+        case 5:
+        case 6:
+        case 7:
+          type = 'floor';
+          break;
+        case 8:
+        case 9:
+          type = 'hole';
+          break;
       }
       typeMap[row][col] = type;
     }
   }
   // in a second pass, we change the 'ceiling' tiles that are north of
   // non-ceiling tiles to be 'wall' tiles.
-  /*
-  for (var row = 0; row < canvas.height/T; row++) {
-    for (var col = 0; col < canvas.width/T; col++) {
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
       if (typeMap[row][col] == 'ceiling'
         && typeMap[row+1] != undefined
         && typeMap[row+1][col] != 'ceiling') {
           typeMap[row][col] = 'wall';
+          console.log(row, col);
       }
     }
   }
-  */
 }
 
 function checkType(row, col, ruleTypeStr, baseType) {
@@ -203,6 +215,9 @@ function drawTerrain(){
         ctx.drawImage(terrain_hole, col*T, row*T)
       } else if (viewMap[row][col] == 'ceiling') {
         ctx.drawImage(terrain_ceiling, col*T, row*T)
+      } else if (viewMap[row][col] == 'wall') {
+        // TODO(johnicholas): add an image to draw a wall
+        ctx.drawImage(terrain_ceiling, col*T, row*T)
       } else if (viewMap[row][col] == 'floor') {
         // ctx.drawImage(terrain_floor, col*T, row*T);
       } else if (typeof viewMap[row][col] == 'number') {
@@ -213,6 +228,7 @@ function drawTerrain(){
         // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
         let row_in_sheet = viewMap[row][col].row;
         let col_in_sheet = viewMap[row][col].col;
+        // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
         ctx.drawImage(terrain_sheet2, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
       }
     }
