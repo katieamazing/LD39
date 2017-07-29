@@ -40,29 +40,37 @@ var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
+let world =
+  { width: 3 * canvas.width
+  , height: 3 * canvas.height
+  }
 
 let states =
   { space: {bg: "black"}
   , winecellar: {bg: "brown"}
-  , planet: {bg: "white"}
+  , planet: {bg: "grey"}
   }
 
 let currentState = "planet";
 let keys = [];
 let typeMap = [];
 let viewMap = [];
+let viewport = {
+  x: 1000,
+  y: 1000
+};
 let player = {
-  x: 20,
-  y: 20,
+  x: 1020,
+  y: 1020,
   width: 20,
   height: 20,
   holding: null
 }
 
 let stuff =
-  [ new Ingredient(70, 300, 10, 10, "#ff00ff")
-  , new Ingredient(340, 500, 20, 15, "#ff0080")
-  , new Ingredient(700, 17, 10, 5, "#0000ff")
+  [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
+  , new Ingredient(1340, 1500, 20, 15, "#ff0080")
+  , new Ingredient(1700, 1017, 10, 5, "#0000ff")
   ]
 
 function sendWine(player, wine, shelf_number){
@@ -102,9 +110,9 @@ function transitionToState(destinationState) {
 // TODO(johnicholas): make this return a value, instead of mutating a global
 function makeTypeMap(){
   typeMap = [];
-  for (var row = 0; row < canvas.height/T; row++) {
+  for (var row = 0; row < world.height/T; row++) {
     typeMap[row] = [];
-    for (var col = 0; col < canvas.width/T; col++) {
+    for (var col = 0; col < world.width/T; col++) {
       let index = Math.floor((Math.random()) * 3);
       let type = null;
       if (index == 0) {
@@ -179,17 +187,18 @@ function updateViewFromType(row, col) {
 
 // TODO(johnicholas): make this return a value, instead of mutating a global
 function makeViewMap() {
-  for (var row = 0; row < canvas.height/T; row++) {
+  for (var row = 0; row < world.height/T; row++) {
     viewMap[row] = [];
-    for (var col = 0; col < canvas.width/T; col++) {
+    for (var col = 0; col < world.width/T; col++) {
       viewMap[row][col] = updateViewFromType(row, col);
     }
   }
 }
 
 function drawTerrain(){
-  for (var row = 0; row < canvas.height/T; row++) {
-    for (var col = 0; col < canvas.width/T; col++) {
+  // TODO(johnicholas): draw less, not all this can be seen
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
       if (viewMap[row][col] == 'hole') {
         ctx.drawImage(terrain_hole, col*T, row*T)
       } else if (viewMap[row][col] == 'ceiling') {
@@ -237,6 +246,26 @@ function movePlayer(player){
   if (player.holding !== null){
     player.holding.move();
   }
+  var new_viewport_x;
+  var new_viewport_y;
+  if (player.x < viewport.x + canvas.width / 3.0) {
+    new_viewport_x = player.x - canvas.width / 3.0;
+  }
+  if (player.x > viewport.x + canvas.width * 2.0 / 3.0) {
+    new_viewport_x = player.x - canvas.width * 2.0 / 3.0;
+  }
+  if (player.y < viewport.y + canvas.height / 3.0) {
+    new_viewport_y = player.y - canvas.height / 3.0;
+  }
+  if (player.y > viewport.y + canvas.height * 2.0 / 3.0) {
+    new_viewport_y = player.y - canvas.height * 2.0 / 3.0
+  }
+  if (new_viewport_x > 0 && new_viewport_x < world.width - canvas.width) {
+    viewport.x = new_viewport_x;
+  }
+  if (new_viewport_y > 0 && new_viewport_y < world.height - canvas.height) {
+    viewport.y = new_viewport_y;
+  }
 }
 
 function drawPlayer(player){
@@ -266,10 +295,12 @@ function update() {
 
   //now draw it
   drawBackground(states[currentState].bg);
+  ctx.save();
+  ctx.translate(-1 * viewport.x, -1 * viewport.y);
   drawTerrain();
   drawPlayer(player);
-
   drawStuff(stuff);
+  ctx.restore();
   requestAnimationFrame(update);
 }
 
