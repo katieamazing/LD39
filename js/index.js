@@ -4,12 +4,50 @@
     window.requestAnimationFrame = requestAnimationFrame;
 })();
 
+class Ingredient {
+
+  constructor (x, y, width, height, color) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.color = color;
+  }
+
+  draw(){
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+
+  action(){
+    if (player.holding == null) {
+        player.holding = this;
+    } else if (player.holding == this) {
+      player.holding = null;
+    }
+  }
+
+  move(){ //move with player
+    this.x = player.x;
+    this.y = player.y;
+  }
+}
+
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
 
+let states =
+  { space: {bg: "black"}
+  , winecellar: {bg: "brown"}
+  , planet: {bg: "white"}
+  }
+
+let currentState = "planet";
 let keys = [];
 let typeMap = [];
 let viewMap = [];
@@ -22,9 +60,9 @@ let player = {
 }
 
 let stuff =
-  [ { x: 70, y: 300, width: 10, height: 10, color:"#ff00ff" }
-  , { x: 400, y: 500, width: 10, height: 10, color:"#ff0080" }
-  , { x: 760, y: 17, width: 10, height: 10, color:"#0000ff" }
+  [ new Ingredient(70, 300, 10, 10, "#ff00ff")
+  , new Ingredient(340, 500, 20, 15, "#ff0080")
+  , new Ingredient(700, 17, 10, 5, "#0000ff")
   ]
 
 function sendWine(player, wine, shelf_number){
@@ -55,6 +93,10 @@ function viewWine(shelf_number){
     console.log(data);
     // TODO: display data[shelf_number] to user
   });
+}
+
+function transitionToState(destinationState) {
+  currentState = destinationState;
 }
 
 // TODO(johnicholas): make this return a value, instead of mutating a global
@@ -170,10 +212,7 @@ function drawTerrain(){
 
 function drawStuff(stuff){
   for (var i = 0; i < stuff.length; i++) {
-    ctx.beginPath();
-    ctx.rect(stuff[i].x, stuff[i].y, 10, 10);
-    ctx.fillStyle = stuff[i].color;
-    ctx.fill();
+    stuff[i].draw();
   }
 };
 
@@ -196,8 +235,7 @@ function movePlayer(player){
   }
 
   if (player.holding !== null){
-    stuff[player.holding].x = player.x;
-    stuff[player.holding].y = player.y;
+    player.holding.move();
   }
 }
 
@@ -208,27 +246,15 @@ function drawPlayer(player){
   ctx.fill();
 }
 
-function drawBackground(){
+function drawBackground(color){
   ctx.beginPath();
   ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "white"; // TODO(johnicholas): put this back to "black"
+  ctx.fillStyle = color;
   ctx.fill();
 }
 
 function colCheck(a, b){
   return !(b.x > a.x + a.width) && !(a.x > b.x + b.width) && !(b.y > a.y + a.height) && !(a.y > b.y + b.height);
-}
-
-function pickUp(){
-  for (var i = 0; i < stuff.length; i++){
-    if (colCheck(player, stuff[i])) {
-      player.holding = i;
-    }
-  }
-}
-
-function dropOff(){
-  player.holding = null;
 }
 
 function update() {
@@ -239,7 +265,7 @@ function update() {
   movePlayer(player);
 
   //now draw it
-  drawBackground();
+  drawBackground(states[currentState].bg);
   drawTerrain();
   drawPlayer(player);
 
@@ -250,10 +276,10 @@ function update() {
 document.body.addEventListener("keydown", function (e) {
     keys[e.keyCode] = true;
     if (e.keyCode == 32) {
-      if (player.holding == null) {
-        pickUp();
-      } else {
-        dropOff();
+      for (var i = 0; i < stuff.length; i++){
+        if (colCheck(player, stuff[i])) {
+          stuff[i].action();
+        }
       }
     }
 });
