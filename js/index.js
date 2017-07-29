@@ -63,8 +63,7 @@ function makeTypeMap(){
   for (var row = 0; row < canvas.height/T; row++) {
     typeMap[row] = [];
     for (var col = 0; col < canvas.width/T; col++) {
-      // TODO(johnicholas): put back to 3, this tests floors-and-holes
-      let index = Math.floor((Math.random()) * 2);
+      let index = Math.floor((Math.random()) * 3);
       let type = null;
       if (index == 0) {
         type = 'floor';
