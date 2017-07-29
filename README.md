@@ -2,7 +2,7 @@
 
 *Art*
 * [ ] terrain art (static)
-* [ ] terrain art (procedurally generated)
+* [ ] terrain art (slightly procedurally generated)
 * [ ] Space art (procedurally generated)
 * [ ] character art
 * [ ] ship art
