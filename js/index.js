@@ -269,6 +269,36 @@ class WineCellar {
       this.stuff.push(stuff_to_add[i]);
     }
   }
+
+  sendWine(player, wine, shelf_number){
+    var payload = {
+      "player": player,
+      "wine": wine,
+      "shelf_number": shelf_number
+    };
+    var data = new FormData();
+    data.append( "player", player);
+    data.append( "wine", wine);
+    data.append( "shelf_number", JSON.stringify( shelf_number ) );
+
+    fetch("https://ktld39.webscript.io/add_wine",
+    { method: "POST", body: data })
+    .then(function(res){
+      return res.json();
+    })
+    .then(function(data){
+      console.log(JSON.stringify(data));
+    })
+  }
+
+  viewWine(shelf_number){
+    fetch("https://ktld39.webscript.io/get_list").then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+      // TODO: display data[shelf_number] to user
+    });
+  }
 }
 
 class Planet {
