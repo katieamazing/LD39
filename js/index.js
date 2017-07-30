@@ -90,6 +90,21 @@ class TransitionDevice {
 class Space {
   constructor(seed) {
     // TODO(johnicholas): Use the seed to place the sun and several planets?
+    // build the background table using this seed TODO
+    this.bg = [];
+    for (var row = 0; row < canvas.height/T; row++) {
+      let y = row * 64;
+      for (var col = 0; col < canvas.width/T; col++) {
+        let x = col * 64;
+        let argx = 0;
+        if (Math.random() < 0.8) {
+          Math.floor((Math.random()) * 10);
+          argx = (Math.floor((Math.random() * 12)) * 64);
+        }
+        this.bg.push([argx, x, y]);
+      }
+    }
+    console.log(this.bg);
     this.ship = {x: canvas.width * 0.8, y: canvas.height * 0.8};
     // stuff that is native to space, like the sun, planets, and wormholes.
     // This stuff is never gonna go from space to the wine cellar or a planet.
@@ -133,8 +148,14 @@ class Space {
     ctx.fillStyle = "black";
     ctx.fill();
 
+    // TODO(johnicholas help katie with this)
+    // performing inconsistenly with graphics warping and dropped tiles.
+    for (var img = 0; img < this.bg.length; img++) {
+      ctx.drawImage(space_bg_tiles, this.bg[img][0], this.bg[img][1], this.bg[img][2], T);
+    }
+
     // draw sparkly space bits
-    // TODO
+
 
     // draw native space stuff
     for (var i = 0; i < this.native_space_stuff.length; i++) {
@@ -145,6 +166,12 @@ class Space {
     ctx.arc(this.ship.x, this.ship.y, 200, 0, 2*Math.PI);
     ctx.strokeStyle = 'white';
     ctx.stroke();
+
+    //TODO
+    //let svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    //svgElement.setAttribute('transform', 'translate(' + this.ship.x + ', ' + this.ship.y + ') rotate(' + 0 + ')' );
+    //svgElement.setAttribute('href', href);
+    //document.querySelector('#canvas').appendChild(svgElement);
 
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
