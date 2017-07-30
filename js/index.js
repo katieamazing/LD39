@@ -60,54 +60,82 @@ class Ingredient {
   }
 }
 
-// A transitiondevice acts like a two-way door between two adjacent states
-// for example, the launch thrusters are used to get from planets to space,
-// and from space to planets, while the warp drive is used to get from space
-// to the wine cellar and from the wine cellar to space.
-class TransitionDevice {
-  constructor (x, y, width, height, color, destination1, destination2) {
+// The wormhole acts like a one-way door between space and the hyperspatial
+// wine cellar between the stars.
+// It takes a destination function instead of a destination, so that we can
+// avoid creating the destination state object until it is actually necessary.
+class Wormhole {
+  constructor (x, y, destination_fn) {
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
-    this.color = color;
-    this.destination1 = destination1;
-    this.destination2 = destination2;
-    // TODO(johnicholas): Stop using TransitionDevice to get from space to planets
+    this.width = 10;
+    this.height = 10;
+    this.color = "green";
     this.radius = 10;
+    this.destination_fn = destination_fn;
   }
 
   draw() {
-    ctx.save();
-    if (currentState != this.destination1
-      && currentState != this.destination2) {
-        // unusable in this space, so fade out a little.
-        ctx.globalAlpha = 0.4;
-    }
     ctx.beginPath();
     ctx.rect(this.x, this.y, this.width, this.height);
     ctx.fillStyle = this.color;
     ctx.fill();
-    ctx.restore();
   }
 
   action() {
-    if (currentState == this.destination1) {
-      transitionToState(this.destination2);
-    } else if (currentState == this.destination2) {
-      transitionToState(this.destination1);
-    } else {
-      // TODO(johnicholas): some sort of failure!
+    transitionToState(this.destination_fn())
+  }
+}
+
+// The launch thruster is responsible for tracking fuel and launching the
+// player into space.
+class LaunchThruster {
+  constructor (x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 100;
+    this.height = 100;
+    this.color = "red";
+    this.fuel = 5;
+  }
+
+  draw() {
+    for (var i = 0; i < this.fuel; i++) {
+      ctx.beginPath();
+      ctx.rect(this.x, this.y + this.height - (i+1) * this.height / 5, this.width, this.height / 6);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.strokeStyle = this.color;
+    ctx.stroke();
+  }
+
+  action() {
+    if (player.holding === null && this.fuel > 0 && currentState.space_state) {
+      console.log("Launch!");
+      this.fuel -= 1;
+      transitionToState(currentState.space_state);
+    } else if (player.holding !== null && this.fuel < 5) {
+      console.log("Refuel!");
+      this.fuel += 1;
+      var index = currentState.stuff.indexOf(player.holding);
+      if (index > -1) {
+        currentState.stuff.splice(index, 1);
+      }
+      player.holding = null;
     }
   }
 }
 
-// A FloatingPlanet is responsible for getting the player from space to one particular planet.
+// A FloatingPlanet is visible in sspace, and is
+// responsible for getting the player from space to one particular planet.
 class FloatingPlanet {
-  constructor (seed_string, x, y, r) {
+  constructor (seed_string, x, y, r, space_state) {
     this.seed_string = seed_string;
     this.rng = new Math.seedrandom(seed_string);
-    this.destination_planet = new Planet(seed_string + ",terrain");
+    this.destination_planet = new Planet(seed_string + ",terrain", space_state);
     this.svg = mySVG.cloneNode(true);
     // TODO(johnicholas): improve this
     //this.svg.querySelector("#spaceDome path").style.fill = "rgb(" + Math.floor(this.rng() * 255) + ", " + Math.floor(this.rng() * 100) + ", 0)";
@@ -151,16 +179,16 @@ class FloatingPlanet {
   }
   action() {
     console.log("going down to ", this.seed_string);
-    // transitionToState(this.destination_planet);
+    transitionToState(this.destination_planet);
   }
 
 
 }
 
 class Space {
-  constructor(seed_string) {
-    this.seed_string = seed_string;
-    this.rng = new Math.seedrandom(seed_string);
+  constructor(username, systems_seen) {
+    this.seed_string = username + "," + systems_seen;
+    this.rng = new Math.seedrandom(this.seed_string);
     this.bg = [];
     for (var row = 0; row < canvas.height/T; row++) {
       let y = row * 64;
@@ -176,20 +204,22 @@ class Space {
     this.ship = {x: canvas.width * 0.8, y: canvas.height * 0.8, radius: 200};
     // stuff that is native to space, like the sun, planets, and wormholes.
     // This stuff is never gonna go from space to the wine cellar or a planet.
-    this.native_space_stuff =
-      [ new TransitionDevice(100, 200, 10, 10, "#ff0000", "Planet", "Space")
-      , new TransitionDevice(300, 400, 10, 10, "#00ff00", "Space", "WineCellar")
-      ]
-    // TODO(johnicholas): Use the seed to place the sun and several planets?
+    this.native_space_stuff = [
+      new Wormhole(canvas.width * 0.8, canvas.height * 0.8,
+        function () {
+          return new WineCellar(username, systems_seen+1);
+        })
+    ];
+    // Use the seed to create several planets
     var planet_count = randBetween(this.rng, 1, 6);
     for (var planet_index = 0; planet_index < planet_count; planet_index++) {
       var f = (planet_index+1)/(planet_count+1);
-      let x = f*0 + (1-f)*canvas.width*0.7;
-      let y = f*canvas.height + (1-f) * 0;
+      let x = f*0 + (1-f)*canvas.width*0.7 + randBetween(this.rng, -50, 50);
+      let y = f*canvas.height + (1-f) * 0 + randBetween(this.rng, -50, 50);
       let min_r = 50;
       let max_r = 200;
       let r = f*max_r + (1-f)*min_r;
-      this.native_space_stuff.push(new FloatingPlanet(this.seed_string + "," + planet_index, x, y, r));
+      this.native_space_stuff.push(new FloatingPlanet(this.seed_string + "," + planet_index, x, y, r, this));
     }
     this.stuff = [];
   }
@@ -236,34 +266,38 @@ class Space {
     for (var i = 0; i < this.native_space_stuff.length; i++) {
       this.native_space_stuff[i].draw();
     }
-    // draw ship (radius)
+
+    // TODO(johnicholas): draw ship for real
     ctx.beginPath();
     ctx.arc(this.ship.x, this.ship.y, 200, 0, 2*Math.PI);
     ctx.strokeStyle = 'white';
     ctx.stroke();
-
-    //TODO
-
 
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
     }
 
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height);
-    ctx.lineTo(canvas.width*0.7, 0);
-    ctx.strokeStyle = "white";
-    ctx.stroke();
+    // plane of the ecliptic
+    //ctx.beginPath();
+    //ctx.moveTo(0, canvas.height);
+    //ctx.lineTo(canvas.width*0.7, 0);
+    //ctx.strokeStyle = "white";
+    //ctx.stroke();
   }
 
   action() {
+    var best_so_far = Number.POSITIVE_INFINITY;
+    var found = null;
     for (var i = 0; i < this.native_space_stuff.length; i++) {
-      // TODO(johnicholas): move the ship radius up and out
-      if (circleColCheck(this.ship, this.native_space_stuff[i])) {
-        this.native_space_stuff[i].action();
-        return;
+      if (circleColCheck(this.ship, this.native_space_stuff[i])
+        && dist(this.ship, this.native_space_stuff[i]) < best_so_far) {
+        best_so_far = dist(this.ship, this.native_space_stuff[i]);
+        found = i;
       }
+    }
+    if (found !== null) {
+      this.native_space_stuff[found].action();
     }
   }
 
@@ -294,9 +328,14 @@ class Space {
 }
 
 class WineCellar {
-  constructor() {
-    this.ship = {x: 600, y: 400};
-    this.native_hyperspace_stuff = [];
+  constructor(username, systems_seen) {
+    this.ship = {x: 650, y: 400};
+    this.native_hyperspace_stuff = [
+      new Wormhole(canvas.width * 0.6, canvas.height * 0.5,
+        function () {
+          return new Space(username, systems_seen);
+        })
+    ];
     this.stuff = [];
   }
   update() {
@@ -330,6 +369,10 @@ class WineCellar {
     ctx.drawImage(wine_room, 200, 200);
 
     // draw stuff
+    for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
+      this.native_hyperspace_stuff[i].draw();
+    }
+    // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
     }
@@ -345,16 +388,28 @@ class WineCellar {
   }
   action() {
     for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
-      // TODO(johnicholas): move the ship radius up and out
-      if (dist(this.ship, this.native_hyperspace_stuff[i]) < 200) {
+      if (colCheck(player, this.native_hyperspace_stuff[i])) {
         this.native_hyperspace_stuff[i].action();
         return;
       }
     }
+    var found = [];
     for (var i = 0; i < this.stuff.length; i++) {
-      if (this.stuff[i] !== player && colCheck(player, this.stuff[i])) {
-        this.stuff[i].action();
+      if (this.stuff[i] === player) {
+        // player can't action itself, silly!
+      } else if (this.stuff[i] === player.holding) {
+        // de-prioritize this, so we can load things
+      } else if (colCheck(player, this.stuff[i])) {
+        found.push(i);
       }
+    }
+    if (found.length == 1) {
+      this.stuff[found[0]].action();
+    } else if (found.length > 0) {
+      console.log("Which one?", found);
+    } else if (player.holding) {
+      // only if there is no other thing to do
+      player.holding.action();
     }
   }
   getShipStuff() {
@@ -414,8 +469,9 @@ class WineCellar {
 }
 
 class Planet {
-  constructor(seed_string) {
+  constructor(seed_string, space_state) {
     this.seed_string = seed_string;
+    this.space_state = space_state;
     this.rng = new Math.seedrandom(this.seed_string);
     this.world =
       { width: 3 * canvas.width
@@ -431,7 +487,7 @@ class Planet {
       x: canvas.width * 1.5,
       y: canvas.height * 1.5
     }
-    // TODO(johnicholas): scatter random ingredients
+    // TODO(johnicholas): scatter random ingredients and power crystals?
     this.stuff =
       [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
       , new Ingredient(1340, 1500, 20, 15, "#ff0080")
@@ -527,10 +583,23 @@ class Planet {
     ctx.restore();
   }
   action() {
+    var found = [];
     for (var i = 0; i < this.stuff.length; i++) {
-      if (this.stuff[i] !== player && colCheck(player, this.stuff[i])) {
-        this.stuff[i].action();
+      if (this.stuff[i] === player) {
+        // player can't action itself, silly!
+      } else if (this.stuff[i] === player.holding) {
+        // de-prioritize this, so we can load things
+      } else if (colCheck(player, this.stuff[i])) {
+        found.push(i);
       }
+    }
+    if (found.length == 1) {
+      this.stuff[found[0]].action();
+    } else if (found.length > 0) {
+      console.log("Which one?", found);
+    } else if (player.holding) {
+      // only if there is no other thing to do
+      player.holding.action();
     }
   }
   getShipStuff() {
@@ -542,6 +611,13 @@ class Planet {
         this.stuff[i].x -= this.ship.x;
         this.stuff[i].y -= this.ship.y;
         accumulator.push(this.stuff[i]);
+      }
+    }
+    // remove all and only the things that are leaving
+    for (var j = 0; j < accumulator.length; j++) {
+      var index = this.stuff.indexOf(accumulator[j]);
+      if (index > -1) {
+        this.stuff.splice(index, 1);
       }
     }
     return accumulator;
@@ -563,12 +639,7 @@ var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
-let states =
-  { Space: new Space("KT")
-  , WineCellar: new WineCellar
-  , Planet: new Planet("JN")
-  }
-let currentState = "Space";
+let currentState = new Space("KT", 0);
 let keys = [];
 let player = {
   x: 0,
@@ -583,33 +654,39 @@ player.draw = function () {
   ctx.fillStyle = "white";
   ctx.fill();
 };
-states[currentState].addShipStuff([player]);
 (function () {
-  let launch_thruster =
-    new TransitionDevice(-100, 0, 10, 10, "#ff0000", "Planet", "Space");
-  let warp_drive =
-    new TransitionDevice(100, 0, 10, 10, "#00ff00", "Space", "WineCellar")
-  states[currentState].addShipStuff([player, launch_thruster, warp_drive]);
+  let launch_thruster = new LaunchThruster(-100, 0);
+  currentState.addShipStuff([player, launch_thruster]);
 }());
 // END GLOBALS GLOBALS GLOBALS
 
 function transitionToState(destinationState) {
-  states[destinationState].addShipStuff(states[currentState].getShipStuff())
+  destinationState.addShipStuff(currentState.getShipStuff())
   currentState = destinationState;
 }
 
-function update() {
-  states[currentState].update()
-  states[currentState].draw();
-  requestAnimationFrame(update);
+function frame() {
+  currentState.update()
+  currentState.draw();
+  requestAnimationFrame(frame);
 }
 
 document.body.addEventListener("keydown", function (e) {
-  e.preventDefault();
+  if (e.keyCode == 39
+    || e.keyCode == 68
+    || e.keyCode == 37
+    || e.keyCode == 65
+    || e.keyCode == 38
+    || e.keyCode == 87
+    || e.keyCode == 40
+    || e.keyCode == 83
+    || e.keyCode == 32) {
+    e.preventDefault();
     keys[e.keyCode] = true;
     if (e.keyCode == 32) {
-      states[currentState].action();
+      currentState.action();
     }
+  }
 });
 
 document.body.addEventListener("keyup", function (e) {
@@ -617,5 +694,5 @@ document.body.addEventListener("keyup", function (e) {
 });
 
 window.addEventListener("load", function () {
-  update();
+  frame();
 });
