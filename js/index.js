@@ -20,8 +20,14 @@ function colCheck(a, b){
 // A generic circle against circle collision check, between any two objects
 // which have x, y, and radius properties.
 function circleColCheck(a, b) {
-  console.log("circleColCheck", a, b);
   return dist(a, b) < (a.radius + b.radius);
+}
+
+function randBetween(rng, floor, ceil) {
+  return Math.floor(rng() * (ceil - floor)) + floor;
+}
+function generateColor(rng) {
+  return "rgb(" + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ")";
 }
 
 class Ingredient {
@@ -98,29 +104,57 @@ class TransitionDevice {
 
 // A FloatingPlanet is responsible for getting the player from space to one particular planet.
 class FloatingPlanet {
-  constructor (seed_string) {
+  constructor (seed_string, x, y, r) {
     this.seed_string = seed_string;
     this.rng = new Math.seedrandom(seed_string);
     this.destination_planet = new Planet(seed_string + ",terrain");
     this.svg = mySVG.cloneNode(true);
     // TODO(johnicholas): improve this
-    this.svg.querySelector("#spaceDome path").style.fill = "rgb(" + Math.floor(this.rng() * 255) + ", " + Math.floor(this.rng() * 100) + ", 0)";
+    //this.svg.querySelector("#spaceDome path").style.fill = "rgb(" + Math.floor(this.rng() * 255) + ", " + Math.floor(this.rng() * 100) + ", 0)";
+    let planet_types = ["a", "m", "n", "p", "s", "b"];
+    let layer_1 = this.svg.querySelector("#e" + planet_types[Math.floor(this.rng() * planet_types.length)] + "_1");
+    let layer_2 = this.svg.querySelector("#e" + planet_types[Math.floor(this.rng() * planet_types.length)] + "_2");
+
+    this.svg.querySelector("#e_0 circle").style.fill = generateColor(this.rng);
+
+    let layer_1Paths = layer_1.querySelectorAll("path");
+    let layer_1PC = generateColor(this.rng);
+    for (var i = 0; i < layer_1Paths.length; i++) {
+      layer_1Paths[i].style.fill = layer_1PC;
+    }
+
+    let layer_2Paths = layer_2.querySelectorAll("path");
+    let layer_2PC = generateColor(this.rng);
+    for (var i = 0; i < layer_2Paths.length; i++) {
+      layer_2Paths[i].style.fill = layer_2PC;
+    }
+
+    this.svg.querySelector("#e_0").setAttribute("transform", "scale(" + r/67 + ")");
+    layer_1.setAttribute("transform", "scale(" + r/67 + ")");
+    layer_2.setAttribute("transform", "scale(" + r/67 + ")");
+
+    this.svg.querySelector("#e_0").style.display = "inline";
+    layer_1.style.display = "inline";
+    layer_2.style.display = "inline";
+
     var wrap = document.createElement("div");
     wrap.appendChild(this.svg);
     this.image = new Image();
     this.image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
-    this.x = this.rng() * (canvas.width - 200) + 100;
-    this.y = this.rng() * (canvas.height - 200) + 100;
-    this.radius = 100;
+    this.x = x;
+    this.y = y;
+    this.radius = r;
   }
 
   draw() {
-    ctx.drawImage(this.image, this.x, this.y);
+    ctx.drawImage(this.image, this.x - 100 * this.radius / 67, this.y - 133 * this.radius / 67);
   }
   action() {
     console.log("going down to ", this.seed_string);
     // transitionToState(this.destination_planet);
   }
+
+
 }
 
 class Space {
@@ -147,9 +181,15 @@ class Space {
       , new TransitionDevice(300, 400, 10, 10, "#00ff00", "Space", "WineCellar")
       ]
     // TODO(johnicholas): Use the seed to place the sun and several planets?
-    var planet_count = Math.floor(this.rng() * 10);
+    var planet_count = randBetween(this.rng, 1, 6);
     for (var planet_index = 0; planet_index < planet_count; planet_index++) {
-      this.native_space_stuff.push(new FloatingPlanet(this.seed_string + "," + planet_index));
+      var f = (planet_index+1)/(planet_count+1);
+      let x = f*0 + (1-f)*canvas.width*0.7;
+      let y = f*canvas.height + (1-f) * 0;
+      let min_r = 50;
+      let max_r = 200;
+      let r = f*max_r + (1-f)*min_r;
+      this.native_space_stuff.push(new FloatingPlanet(this.seed_string + "," + planet_index, x, y, r));
     }
     this.stuff = [];
   }
@@ -209,6 +249,12 @@ class Space {
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
     }
+
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    ctx.lineTo(canvas.width*0.7, 0);
+    ctx.strokeStyle = "white";
+    ctx.stroke();
   }
 
   action() {
