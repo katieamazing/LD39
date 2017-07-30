@@ -85,29 +85,26 @@ let rules = {
   wall: []
 };
 
-function makeTypeMap(world){
+function makeTypeMap(world, rng) {
   var typeMap = [];
   for (var row = 0; row < world.height/T; row++) {
     typeMap[row] = [];
     for (var col = 0; col < world.width/T; col++) {
-      // TODO(johnicholas): change this back to 3, this is "lots of ceiling" testing.
-      let index = Math.floor((Math.random()) * 10);
       let type = null;
-      switch (Math.floor((Math.random()) * 10)) {
+      switch (Math.floor(rng() * 10)) {
         case 0:
         case 1:
+          type = 'ceiling';
+          break;
         case 2:
         case 3:
         case 4:
         case 5:
-          type = 'ceiling';
-          break;
-        case 5:
         case 6:
         case 7:
+        case 8:
           type = 'floor';
           break;
-        case 8:
         case 9:
           type = 'hole';
           break;

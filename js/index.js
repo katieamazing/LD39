@@ -17,6 +17,13 @@ function colCheck(a, b){
   return !(b.x > a.x + a.width) && !(a.x > b.x + b.width) && !(b.y > a.y + a.height) && !(a.y > b.y + b.height);
 }
 
+// A generic circle against circle collision check, between any two objects
+// which have x, y, and radius properties.
+function circleColCheck(a, b) {
+  console.log("circleColCheck", a, b);
+  return dist(a, b) < (a.radius + b.radius);
+}
+
 class Ingredient {
   constructor (x, y, width, height, color) {
     this.x = x;
@@ -60,6 +67,8 @@ class TransitionDevice {
     this.color = color;
     this.destination1 = destination1;
     this.destination2 = destination2;
+    // TODO(johnicholas): Stop using TransitionDevice to get from space to planets
+    this.radius = 10;
   }
 
   draw() {
@@ -87,31 +96,61 @@ class TransitionDevice {
   }
 }
 
+// A FloatingPlanet is responsible for getting the player from space to one particular planet.
+class FloatingPlanet {
+  constructor (seed_string) {
+    this.seed_string = seed_string;
+    this.rng = new Math.seedrandom(seed_string);
+    this.destination_planet = new Planet(seed_string + ",terrain");
+    this.svg = mySVG.cloneNode(true);
+    // TODO(johnicholas): improve this
+    this.svg.querySelector("#spaceDome path").style.fill = "rgb(" + Math.floor(this.rng() * 255) + ", " + Math.floor(this.rng() * 100) + ", 0)";
+    var wrap = document.createElement("div");
+    wrap.appendChild(this.svg);
+    this.image = new Image();
+    this.image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
+    this.x = this.rng() * (canvas.width - 200) + 100;
+    this.y = this.rng() * (canvas.height - 200) + 100;
+    this.radius = 100;
+  }
+
+  draw() {
+    ctx.drawImage(this.image, this.x, this.y);
+  }
+  action() {
+    console.log("going down to ", this.seed_string);
+    // transitionToState(this.destination_planet);
+  }
+}
+
 class Space {
-  constructor(seed) {
-    // TODO(johnicholas): Use the seed to place the sun and several planets?
-    // build the background table using this seed TODO
+  constructor(seed_string) {
+    this.seed_string = seed_string;
+    this.rng = new Math.seedrandom(seed_string);
     this.bg = [];
     for (var row = 0; row < canvas.height/T; row++) {
       let y = row * 64;
       for (var col = 0; col < canvas.width/T; col++) {
         let x = col * 64;
         let argx = 0;
-        if (Math.random() < 0.8) {
-          Math.floor((Math.random()) * 10);
-          argx = (Math.floor((Math.random() * 12)) * 64);
+        if (this.rng() < 0.8) {
+          argx = Math.floor(this.rng() * 12) * 64;
         }
         this.bg.push([argx, x, y]);
       }
     }
-    console.log(this.bg);
-    this.ship = {x: canvas.width * 0.8, y: canvas.height * 0.8};
+    this.ship = {x: canvas.width * 0.8, y: canvas.height * 0.8, radius: 200};
     // stuff that is native to space, like the sun, planets, and wormholes.
     // This stuff is never gonna go from space to the wine cellar or a planet.
     this.native_space_stuff =
       [ new TransitionDevice(100, 200, 10, 10, "#ff0000", "Planet", "Space")
       , new TransitionDevice(300, 400, 10, 10, "#00ff00", "Space", "WineCellar")
       ]
+    // TODO(johnicholas): Use the seed to place the sun and several planets?
+    var planet_count = Math.floor(this.rng() * 10);
+    for (var planet_index = 0; planet_index < planet_count; planet_index++) {
+      this.native_space_stuff.push(new FloatingPlanet(this.seed_string + "," + planet_index));
+    }
     this.stuff = [];
   }
 
@@ -164,10 +203,7 @@ class Space {
     ctx.stroke();
 
     //TODO
-    //let svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    //svgElement.setAttribute('transform', 'translate(' + this.ship.x + ', ' + this.ship.y + ') rotate(' + 0 + ')' );
-    //svgElement.setAttribute('href', href);
-    //document.querySelector('#canvas').appendChild(svgElement);
+
 
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
@@ -178,7 +214,7 @@ class Space {
   action() {
     for (var i = 0; i < this.native_space_stuff.length; i++) {
       // TODO(johnicholas): move the ship radius up and out
-      if (dist(this.ship, this.native_space_stuff[i]) < 200) {
+      if (circleColCheck(this.ship, this.native_space_stuff[i])) {
         this.native_space_stuff[i].action();
         return;
       }
@@ -251,6 +287,11 @@ class WineCellar {
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
     }
+    // make sure to draw the thing the player is holding after the player,
+    // so that it overlaps
+    if (player.holding) {
+      player.holding.draw();
+    }
     // draw ship (radius)
     ctx.beginPath();
     ctx.arc(this.ship.x, this.ship.y, 200, 0, 2*Math.PI);
@@ -281,6 +322,9 @@ class WineCellar {
         accumulator.push(this.stuff[i]);
       }
     }
+    // Clear hyperspace's stuff,
+    // you can't leave stuff lying around in hyperspace
+    this.stuff = [];
     return accumulator;
   }
   addShipStuff(stuff_to_add) {
@@ -324,12 +368,14 @@ class WineCellar {
 }
 
 class Planet {
-  constructor(seed) {
+  constructor(seed_string) {
+    this.seed_string = seed_string;
+    this.rng = new Math.seedrandom(this.seed_string);
     this.world =
       { width: 3 * canvas.width
       , height: 3 * canvas.height
       }
-    this.typeMap = makeTypeMap(this.world);
+    this.typeMap = makeTypeMap(this.world, this.rng);
     this.viewMap = makeViewMap(this.world, this.typeMap);
     this.viewport =
       { x: canvas.width
@@ -339,6 +385,7 @@ class Planet {
       x: canvas.width * 1.5,
       y: canvas.height * 1.5
     }
+    // TODO(johnicholas): scatter random ingredients
     this.stuff =
       [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
       , new Ingredient(1340, 1500, 20, 15, "#ff0080")
@@ -471,9 +518,9 @@ const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
 let states =
-  { Space: new Space
+  { Space: new Space("KT")
   , WineCellar: new WineCellar
-  , Planet: new Planet
+  , Planet: new Planet("JN")
   }
 let currentState = "Space";
 let keys = [];
@@ -494,7 +541,6 @@ states[currentState].addShipStuff([player]);
 (function () {
   let launch_thruster =
     new TransitionDevice(-100, 0, 10, 10, "#ff0000", "Planet", "Space");
-  console.log(typeof launch_thruster.action);
   let warp_drive =
     new TransitionDevice(100, 0, 10, 10, "#00ff00", "Space", "WineCellar")
   states[currentState].addShipStuff([player, launch_thruster, warp_drive]);
