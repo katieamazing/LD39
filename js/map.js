@@ -84,3 +84,104 @@ let rules = {
   ],
   wall: []
 };
+
+function makeTypeMap(world){
+  var typeMap = [];
+  for (var row = 0; row < world.height/T; row++) {
+    typeMap[row] = [];
+    for (var col = 0; col < world.width/T; col++) {
+      // TODO(johnicholas): change this back to 3, this is "lots of ceiling" testing.
+      let index = Math.floor((Math.random()) * 10);
+      let type = null;
+      switch (Math.floor((Math.random()) * 10)) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          type = 'ceiling';
+          break;
+        case 5:
+        case 6:
+        case 7:
+          type = 'floor';
+          break;
+        case 8:
+        case 9:
+          type = 'hole';
+          break;
+      }
+      typeMap[row][col] = type;
+    }
+  }
+  // TODO(johnicholas): in a first pass, change all lonely, pillar-type ceiling tiles to 'floor'
+
+  // in a second pass, we change the 'ceiling' tiles that are north of
+  // non-ceiling tiles to be 'wall' tiles.
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
+      if (typeMap[row][col] == 'ceiling'
+        && typeMap[row+1] != undefined
+        && typeMap[row+1][col] != 'ceiling') {
+          typeMap[row][col] = 'wall';
+      }
+    }
+  }
+  return typeMap;
+}
+
+function checkType(row, col, ruleTypeStr, baseType, typeMap) {
+  var type = null;
+  if (typeMap[row] == undefined || typeMap[row][col] == undefined) {
+    // if we look beyond the edge of the map, we find a copy of the center cell
+    type = baseType;
+  } else {
+    type = typeMap[row][col];
+  }
+  if (ruleTypeStr == undefined) {
+    return true;
+  }
+  if (ruleTypeStr.charAt(0) == "!") {
+    return type != ruleTypeStr.slice(1);
+  } else {
+    return type == ruleTypeStr;
+  }
+}
+
+function checkRule(rule, row, col, typeMap) {
+  var base = typeMap[row][col];
+
+  if( !checkType( row-1, col-1, rule.map.nw, base, typeMap ) ) return false;
+  if( !checkType( row-1, col,   rule.map.n,  base, typeMap ) ) return false;
+  if( !checkType( row-1, col+1, rule.map.ne, base, typeMap ) ) return false;
+  if( !checkType( row,   col-1, rule.map.w,  base, typeMap ) ) return false;
+  if( !checkType( row,   col+1, rule.map.e,  base, typeMap ) ) return false;
+  if( !checkType( row+1, col-1, rule.map.sw, base, typeMap ) ) return false;
+  if( !checkType( row+1, col,   rule.map.s,  base, typeMap ) ) return false;
+  if( !checkType( row+1, col+1, rule.map.se, base, typeMap ) ) return false;
+
+  return true;
+}
+
+function updateViewFromType(row, col, typeMap) {
+  var type = typeMap[row][col];
+  for (var i = 0; i < rules[type].length; i++) {
+    var rule = rules[type][i];
+    if (checkRule(rule, row, col, typeMap)) {
+      return rule.tileIndex;
+    }
+  }
+  return typeMap[row][col];
+}
+
+function makeViewMap(world, typeMap) {
+  var viewMap = [];
+  for (var row = 0; row < world.height/T; row++) {
+    viewMap[row] = [];
+    for (var col = 0; col < world.width/T; col++) {
+      viewMap[row][col] = updateViewFromType(row, col, typeMap);
+    }
+  }
+  return viewMap;
+}

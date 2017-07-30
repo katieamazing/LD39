@@ -148,14 +148,10 @@ class Space {
     ctx.fillStyle = "black";
     ctx.fill();
 
-    // TODO(johnicholas help katie with this)
-    // performing inconsistenly with graphics warping and dropped tiles.
-    for (var img = 0; img < this.bg.length; img++) {
-      ctx.drawImage(space_bg_tiles, this.bg[img][0], this.bg[img][1], this.bg[img][2], T);
-    }
-
     // draw sparkly space bits
-
+    for (var img = 0; img < this.bg.length; img++) {
+      ctx.drawImage(space_bg_tiles, this.bg[img][0], 0, T, T, this.bg[img][1], this.bg[img][2], T, T);
+    }
 
     // draw native space stuff
     for (var i = 0; i < this.native_space_stuff.length; i++) {
@@ -200,7 +196,6 @@ class Space {
         accumulator.push(this.stuff[i]);
       }
     }
-    console.log('Space is sending ', accumulator.length);
     // Clear space's stuff
     this.stuff = [];
     return accumulator;
@@ -506,141 +501,9 @@ states[currentState].addShipStuff([player]);
 }());
 // END GLOBALS GLOBALS GLOBALS
 
-function sendWine(player, wine, shelf_number) {
-  var payload = {
-    "player": player,
-    "wine": wine,
-    "shelf_number": shelf_number
-  };
-  var data = new FormData();
-  data.append( "player", player);
-  data.append( "wine", wine);
-  data.append( "shelf_number", JSON.stringify( shelf_number ) );
-
-  fetch("https://ktld39.webscript.io/add_wine",
-  { method: "POST", body: data })
-  .then(function(res){
-    return res.json();
-  })
-  .then(function(data){
-    console.log(JSON.stringify(data));
-  })
-}
-
-function viewWine(shelf_number){
-  fetch("https://ktld39.webscript.io/get_list").then(function(response) {
-    return response.json();
-  }).then(function(data) {
-    console.log(data);
-    // TODO: display data[shelf_number] to user
-  });
-}
-
 function transitionToState(destinationState) {
   states[destinationState].addShipStuff(states[currentState].getShipStuff())
   currentState = destinationState;
-  console.log('state is now', currentState);
-}
-
-function makeTypeMap(world){
-  var typeMap = [];
-  for (var row = 0; row < world.height/T; row++) {
-    typeMap[row] = [];
-    for (var col = 0; col < world.width/T; col++) {
-      // TODO(johnicholas): change this back to 3, this is "lots of ceiling" testing.
-      let index = Math.floor((Math.random()) * 10);
-      let type = null;
-      switch (Math.floor((Math.random()) * 10)) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-          type = 'ceiling';
-          break;
-        case 5:
-        case 6:
-        case 7:
-          type = 'floor';
-          break;
-        case 8:
-        case 9:
-          type = 'hole';
-          break;
-      }
-      typeMap[row][col] = type;
-    }
-  }
-  // TODO(johnicholas): in a first pass, change all lonely, pillar-type ceiling tiles to 'floor'
-
-  // in a second pass, we change the 'ceiling' tiles that are north of
-  // non-ceiling tiles to be 'wall' tiles.
-  for (var row = 0; row < world.height/T; row++) {
-    for (var col = 0; col < world.width/T; col++) {
-      if (typeMap[row][col] == 'ceiling'
-        && typeMap[row+1] != undefined
-        && typeMap[row+1][col] != 'ceiling') {
-          typeMap[row][col] = 'wall';
-      }
-    }
-  }
-  return typeMap;
-}
-
-function checkType(row, col, ruleTypeStr, baseType, typeMap) {
-  var type = null;
-  if (typeMap[row] == undefined || typeMap[row][col] == undefined) {
-    // if we look beyond the edge of the map, we find a copy of the center cell
-    type = baseType;
-  } else {
-    type = typeMap[row][col];
-  }
-  if (ruleTypeStr == undefined) {
-    return true;
-  }
-  if (ruleTypeStr.charAt(0) == "!") {
-    return type != ruleTypeStr.slice(1);
-  } else {
-    return type == ruleTypeStr;
-  }
-}
-
-function checkRule(rule, row, col, typeMap) {
-  var base = typeMap[row][col];
-
-  if( !checkType( row-1, col-1, rule.map.nw, base, typeMap ) ) return false;
-  if( !checkType( row-1, col,   rule.map.n,  base, typeMap ) ) return false;
-  if( !checkType( row-1, col+1, rule.map.ne, base, typeMap ) ) return false;
-  if( !checkType( row,   col-1, rule.map.w,  base, typeMap ) ) return false;
-  if( !checkType( row,   col+1, rule.map.e,  base, typeMap ) ) return false;
-  if( !checkType( row+1, col-1, rule.map.sw, base, typeMap ) ) return false;
-  if( !checkType( row+1, col,   rule.map.s,  base, typeMap ) ) return false;
-  if( !checkType( row+1, col+1, rule.map.se, base, typeMap ) ) return false;
-
-  return true;
-}
-
-function updateViewFromType(row, col, typeMap) {
-  var type = typeMap[row][col];
-  for (var i = 0; i < rules[type].length; i++) {
-    var rule = rules[type][i];
-    if (checkRule(rule, row, col, typeMap)) {
-      return rule.tileIndex;
-    }
-  }
-  return typeMap[row][col];
-}
-
-function makeViewMap(world, typeMap) {
-  var viewMap = [];
-  for (var row = 0; row < world.height/T; row++) {
-    viewMap[row] = [];
-    for (var col = 0; col < world.width/T; col++) {
-      viewMap[row][col] = updateViewFromType(row, col, typeMap);
-    }
-  }
-  return viewMap;
 }
 
 function update() {
@@ -650,6 +513,7 @@ function update() {
 }
 
 document.body.addEventListener("keydown", function (e) {
+  e.preventDefault();
     keys[e.keyCode] = true;
     if (e.keyCode == 32) {
       states[currentState].action();
