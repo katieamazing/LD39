@@ -31,22 +31,58 @@ function generateColor(rng) {
 }
 
 class Ingredient {
-  constructor (x, y, width, height, color) {
+  constructor (x, y, width, height, color, type, description) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.color = color;
+    this.type = type;
+    this.description = description;
   }
 
-  draw(){
+  draw() {
     ctx.beginPath();
     ctx.rect(this.x, this.y, this.width, this.height);
     ctx.fillStyle = this.color;
     ctx.fill();
   }
 
-  action(){
+  action() {
+    if (player.holding == null) {
+      player.holding = this;
+    } else if (player.holding == this) {
+      player.holding = null;
+    }
+  }
+
+  move(){ //move with player
+    this.x = player.x;
+    this.y = player.y;
+  }
+}
+
+// Wine acts just like any other ingredient?
+// Except maybe it is drawn differently?
+class Wine {
+  constructor (x, y, width, height, color) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.color = color;
+    this.type = 4;
+    this.description = 'strong';
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+
+  action() {
     if (player.holding == null) {
       player.holding = this;
     } else if (player.holding == this) {
@@ -84,6 +120,77 @@ class Wormhole {
 
   action() {
     transitionToState(this.destination_fn())
+  }
+}
+
+class WineMaker {
+  constructor (x, y, width, height) {
+    this.x = x;
+    this.y = y;
+    this.width = 100;
+    this.height = 100;
+    this.color = "blue";
+    this.ingredients = [];
+    this.wine = null;
+  }
+  capacity() {
+    if (this.wine === null) {
+      return 3 - this.ingredients.length;
+    } else {
+      return 0;
+    }
+  }
+  draw() {
+    // draw machine
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.strokeStyle = this.color;
+    ctx.stroke();
+    // draw ingredients OR
+    // draw finished wine
+  }
+  combine_ingredients(first, second, third) {
+    if (first.type == second.type
+      && second.type == third.type) {
+      // all equal
+      return new Wine(-100, -100, 10, 10, "red");
+    } else if (first.type != second.type
+      && second.type != third.type
+      && first.type != third.type) {
+      // all different
+      return new Wine(-100, -100, 10, 10, "blue");
+    } else {
+      // two and one
+      return new Wine(-100, -100, 10, 10, "green");
+    }
+  }
+  action() {
+    if (player.holding === null && this.wine !== null) {
+      console.log("Picking up wine!");
+      currentState.stuff.push(this.wine);
+      player.holding = this.wine;
+      this.wine = null;
+    } else if (player.holding === null && this.ingredients.length > 0) {
+      console.log("Taking an ingredient out!");
+      player.holding = this.ingredients.pop();
+      currentState.stuff.push(player.holding);
+    } else if (player.holding !== null && this.capacity() > 0) {
+      console.log("Putting an ingredient in!");
+      var index = currentState.stuff.indexOf(player.holding);
+      if (index > -1) {
+        currentState.stuff.splice(index, 1);
+      }
+      this.ingredients.push(player.holding);
+      player.holding = null;
+      if (this.capacity() == 0) {
+        this.wine = this.combine_ingredients(
+          this.ingredients[0],
+          this.ingredients[1],
+          this.ingredients[2]
+        );
+        this.ingredients = [];
+      }
+    }
   }
 }
 
@@ -128,6 +235,8 @@ class LaunchThruster {
     }
   }
 }
+
+
 
 // A FloatingPlanet is visible in sspace, and is
 // responsible for getting the player from space to one particular planet.
@@ -468,6 +577,14 @@ class WineCellar {
   }
 }
 
+let descs = [
+  ['incandescent', 'firey', 'psychogenic', 'levitating', 'liquid-metal'],
+  ['warm', 'fuzzy', 'tart', 'tough', 'bright'],
+  ['soft', 'curved', 'supple', 'sinuous', 'slimy'],
+  ['fibrous', 'organic', 'woody', 'starchy', 'crystalline'],
+  ['sweet', 'pungent', 'sour', 'tangy', 'strong'],
+]
+
 class Planet {
   constructor(seed_string, space_state) {
     this.seed_string = seed_string;
@@ -487,12 +604,36 @@ class Planet {
       x: canvas.width * 1.5,
       y: canvas.height * 1.5
     }
-    // TODO(johnicholas): scatter random ingredients and power crystals?
-    this.stuff =
-      [ new Ingredient(1070, 1300, 10, 10, "#ff00ff")
-      , new Ingredient(1340, 1500, 20, 15, "#ff0080")
-      , new Ingredient(1700, 1017, 10, 5, "#0000ff")
-      ]
+    // we scatter random ingredients over the world
+    this.common_ingredient_type = randBetween(this.rng, 2, 4);
+    this.common_ingredient_desc =
+      descs[this.common_ingredient_type][randBetween(this.rng, 0, descs[this.common_ingredient_type].length)];
+      this.common_ingredient_color = generateColor(this.rng);
+    this.rare_ingredient_type = randBetween(this.rng, 0, 5);
+    this.rare_ingredient_desc =
+      descs[this.rare_ingredient_type][randBetween(this.rng, 0, descs[this.rare_ingredient_type].length)];
+    this.rare_ingredient_color = generateColor(this.rng);
+    this.stuff = [];
+    for (var i = 0; i < randBetween(this.rng, 16, 20); i += 1) {
+      this.stuff.push(new Ingredient(
+        randBetween(this.rng, 0, this.world.width),
+        randBetween(this.rng, 0, this.world.height),
+        10,
+        10,
+        this.common_ingredient_color,
+        this.common_ingredient_desc
+      ));
+    }
+    for (var i = 0; i < randBetween(this.rng, 2, 8); i += 1) {
+      this.stuff.push(new Ingredient(
+        randBetween(this.rng, 0, this.world.width),
+        randBetween(this.rng, 0, this.world.height),
+        10,
+        10,
+        this.rare_ingredient_color,
+        this.rare_ingredient_desc
+      ));
+    }
   }
   update() {
     if (keys[39] || keys[68]) {
@@ -656,7 +797,8 @@ player.draw = function () {
 };
 (function () {
   let launch_thruster = new LaunchThruster(-100, 0);
-  currentState.addShipStuff([player, launch_thruster]);
+  let wine_maker = new WineMaker(0, -100);
+  currentState.addShipStuff([player, launch_thruster, wine_maker]);
 }());
 // END GLOBALS GLOBALS GLOBALS
 
