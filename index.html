@@ -12,7 +12,16 @@
 <body>
 <div>
   <p><b>SIP SIP UNIVERSE</b></p>
-    <canvas id="canvas"></canvas>
+  <div style="position:relative">
+        <canvas id="canvas" style="position:absolute; z-index:1"></canvas>
+        <div style="display:none; position:absolute; z-index:2" id="wine_naming_box">
+    <span>
+      <label for="name">What would you like to name this wine?</label><input id="name" type="text" /><button>OK!</button>
+    </span>
+    </div>
+  </div>
+</div>
+
     <img src="imgs/terrain_floor.png" id="terrain_floor" style="display: none"></img>
     <img src="imgs/terrain_hole.png" id="terrain_hole" style="display: none"></img>
     <img src="imgs/terrain_ceiling.png" id="terrain_ceiling" style="display: none"></img>
@@ -45,24 +54,9 @@
       </g>
       <g id="ea_1" style="display:none">
         <path
-           style="display:inline;fill:none;stroke:#35d736;stroke-width:20.39999962;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           d="m 112.86032,163.95238 c 19.92145,0 19.92145,0 19.92145,0"/>
-        <path
-           style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#35d736;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:79.81542206;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
-           d="M 121.13867,468.33008 A 255.71428,255.71428 0 0 0 120,491.08984 a 255.71428,255.71428 0 0 0 6.77148,57.05274 h 113.89258 a 39.911701,39.911701 0 1 0 0,-79.8125 z"
-           transform="scale(0.26458333)" />
-        <path
-           style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#35d736;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:71.87468719;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
-           d="m 150.75781,368.00977 a 255.71428,255.71428 0 0 0 -26.43945,71.87695 h 49.70898 a 35.940936,35.940936 0 1 0 0,-71.87695 z"
-           transform="scale(0.26458333)" />
-        <path
-           style="display:inline;opacity:1;fill:#35d736;fill-opacity:1;stroke:none;stroke-width:21.66803169;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           d="m 447.85742,549.66211 v 10.72266 a 11.261103,11.261103 0 0 1 4.83399,-1.10157 11.261103,11.261103 0 0 1 11.25976,11.26172 11.261103,11.261103 0 0 1 -11.25976,11.25977 11.261103,11.261103 0 0 1 -4.83399,-1.10547 v 14.67773 h 60 v -14.23242 a 11.261103,11.261103 0 0 1 -3.76562,0.66016 11.261103,11.261103 0 0 1 -11.25977,-11.25977 11.261103,11.261103 0 0 1 11.25977,-11.26172 11.261103,11.261103 0 0 1 3.76562,0.66211 v -10.2832 z"
-           transform="scale(0.26458333)" />
-        <path
-           style="display:inline;opacity:1;fill:#35d736;fill-opacity:1;stroke:none;stroke-width:21.66803169;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           d="m 378.67578,365.4707 a 39.911701,39.911701 0 1 0 0,79.8125 H 510.0957 v 0.17188 a 17.542182,17.185039 0 0 1 15.27344,17.02148 17.542182,17.185039 0 0 1 -15.27344,17.01953 v 0.25977 h -59.32812 a 39.911701,39.911701 0 1 0 0,79.81445 H 621.88086 A 255.71428,255.71428 0 0 0 631.4707,491.17383 255.71428,255.71428 0 0 0 598.07812,365.4707 Z"
-           transform="scale(0.26458333)" />
+        style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#35d736;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:77.10236359;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+        d="M 378.67578 365.4707 A 39.9117 39.9117 0 1 0 378.67578 445.2832 L 510.0957 445.2832 L 510.0957 445.45508 A 17.542182 17.185039 0 0 1 525.36914 462.47656 A 17.542182 17.185039 0 0 1 510.0957 479.49609 L 510.0957 479.75586 L 450.76758 479.75586 A 39.9117 39.9117 0 0 0 447.85742 559.50586 L 447.85742 560.38477 A 11.261103 11.261103 0 0 1 450.28516 559.56055 A 39.9117 39.9117 0 0 0 450.76758 559.57031 L 455.17188 559.57031 A 11.261103 11.261103 0 0 1 463.95117 570.54492 A 11.261103 11.261103 0 0 1 456.55859 581.10938 L 448.86523 581.10938 A 11.261103 11.261103 0 0 1 447.85742 580.69922 L 447.85742 581.10938 L 426.55469 581.10938 A 38.555036 38.555036 0 1 0 426.55469 658.21289 L 501.84961 658.21289 A 38.555036 38.555036 0 0 0 507.85742 581.52148 L 507.85742 581.14453 A 11.261103 11.261103 0 0 1 506.93164 581.42578 A 38.555036 38.555036 0 0 0 501.84961 581.10938 L 500.23828 581.10938 A 11.261103 11.261103 0 0 1 492.83203 570.54492 A 11.261103 11.261103 0 0 1 501.62891 559.57031 L 506.53906 559.57031 A 11.261103 11.261103 0 0 1 507.85742 559.94531 L 507.85742 559.57031 L 621.88086 559.57031 A 255.71428 255.71428 0 0 0 631.4707 491.17383 A 255.71428 255.71428 0 0 0 598.07812 365.4707 L 378.67578 365.4707 z M 150.75781 368.00977 A 255.71428 255.71428 0 0 0 124.31836 439.88672 L 174.02734 439.88672 A 35.940936 35.940936 0 1 0 174.02734 368.00977 L 150.75781 368.00977 z M 121.13867 468.33008 A 255.71428 255.71428 0 0 0 120 491.08984 A 255.71428 255.71428 0 0 0 126.77148 548.14258 L 240.66406 548.14258 A 39.9117 39.9117 0 1 0 240.66406 468.33008 L 121.13867 468.33008 z "
+        transform="scale(0.26458333)" />
       </g>
 
 

@@ -167,9 +167,18 @@ class WineMaker {
   action() {
     if (player.holding === null && this.wine !== null) {
       console.log("Picking up wine!");
-      currentState.stuff.push(this.wine);
-      player.holding = this.wine;
-      this.wine = null;
+      naming_mode = true;
+      document.querySelector("#wine_naming_box").style.display = "inline";
+      var that = this;
+      document.querySelector("button").onclick = function (e) {
+        that.wine.name = document.querySelector("input").value;
+        document.querySelector("input").value = "";
+        currentState.stuff.push(that.wine);
+        player.holding = that.wine;
+        that.wine = null;
+        document.querySelector("#wine_naming_box").style.display = "none";
+        naming_mode = false;
+      }
     } else if (player.holding === null && this.ingredients.length > 0) {
       console.log("Taking an ingredient out!");
       player.holding = this.ingredients.pop();
@@ -436,6 +445,66 @@ class Space {
   }
 }
 
+class Shelf {
+  constructor(x, y, i) {
+    this.x = x;
+    this.y = y;
+    this.width = 20;
+    this.height = 30;
+    this.i = i;
+    this.data = this.viewWine(i) || [];
+  }
+
+  viewWine(shelf_number){
+    var that = this;
+    var data = new FormData();
+    data.append( "shelf_number", JSON.stringify( shelf_number ));
+
+    fetch("https://ktld39.webscript.io/get_list",
+    { method: "POST", body: data })
+    .then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      that.data = data;
+      // TODO: display data[shelf_number] to user
+    });
+  }
+  sendWine(player, wine, shelf_number){
+    var that = this;
+    var data = new FormData();
+    data.append( "player", player);
+    data.append( "wine", wine);
+    data.append( "shelf_number", JSON.stringify( shelf_number ) );
+
+    fetch("https://ktld39.webscript.io/add_wine",
+    { method: "POST", body: data })
+    .then(function(res){
+      return res.json();
+    })
+    .then(function(data){
+      that.data = data;
+    })
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, 20, 30);
+    ctx.fillStyle = "brown";
+    ctx.fill();
+  }
+
+  action() {
+    console.log(this.data);
+    if (player.holding != null && player.holding.name) {
+      this.sendWine(PLAYER, player.holding.name, this.i);
+      var index = currentState.stuff.indexOf(player.holding);
+      if (index > -1) {
+        currentState.stuff.splice(index, 1);
+      }
+      player.holding = null;
+    }
+  }
+}
 class WineCellar {
   constructor(username, systems_seen) {
     this.ship = {x: 650, y: 400};
@@ -443,8 +512,13 @@ class WineCellar {
       new Wormhole(canvas.width * 0.6, canvas.height * 0.5,
         function () {
           return new Space(username, systems_seen);
-        })
+        }),
     ];
+
+    for (var i=0; i<5; i++){
+      let x = 220 + (i*30);
+      this.native_hyperspace_stuff.push(new Shelf(x, 300, i));
+    }
     this.stuff = [];
   }
   update() {
@@ -477,6 +551,7 @@ class WineCellar {
     // draw wine room
     ctx.drawImage(wine_room, 200, 200);
 
+
     // draw stuff
     for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
       this.native_hyperspace_stuff[i].draw();
@@ -499,6 +574,7 @@ class WineCellar {
     for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
       if (colCheck(player, this.native_hyperspace_stuff[i])) {
         this.native_hyperspace_stuff[i].action();
+        console.log("colliding with native hyperspace stuff");
         return;
       }
     }
@@ -546,35 +622,6 @@ class WineCellar {
     }
   }
 
-  sendWine(player, wine, shelf_number){
-    var payload = {
-      "player": player,
-      "wine": wine,
-      "shelf_number": shelf_number
-    };
-    var data = new FormData();
-    data.append( "player", player);
-    data.append( "wine", wine);
-    data.append( "shelf_number", JSON.stringify( shelf_number ) );
-
-    fetch("https://ktld39.webscript.io/add_wine",
-    { method: "POST", body: data })
-    .then(function(res){
-      return res.json();
-    })
-    .then(function(data){
-      console.log(JSON.stringify(data));
-    })
-  }
-
-  viewWine(shelf_number){
-    fetch("https://ktld39.webscript.io/get_list").then(function(response) {
-      return response.json();
-    }).then(function(data) {
-      console.log(data);
-      // TODO: display data[shelf_number] to user
-    });
-  }
 }
 
 let descs = [
@@ -775,6 +822,7 @@ class Planet {
 }
 
 // GLOBALS GLOBALS GLOBALS
+var PLAYER = "Katie";
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 const T = 64; //tile size
@@ -800,6 +848,7 @@ player.draw = function () {
   let wine_maker = new WineMaker(0, -100);
   currentState.addShipStuff([player, launch_thruster, wine_maker]);
 }());
+let naming_mode = false;
 // END GLOBALS GLOBALS GLOBALS
 
 function transitionToState(destinationState) {
@@ -814,6 +863,10 @@ function frame() {
 }
 
 document.body.addEventListener("keydown", function (e) {
+  if (naming_mode) {
+    // just do the default
+    return;
+  }
   if (e.keyCode == 39
     || e.keyCode == 68
     || e.keyCode == 37

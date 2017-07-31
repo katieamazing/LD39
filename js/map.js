@@ -94,13 +94,13 @@ function makeTypeMap(world, rng) {
       switch (Math.floor(rng() * 10)) {
         case 0:
         case 1:
-          type = 'ceiling';
-          break;
         case 2:
         case 3:
         case 4:
         case 5:
         case 6:
+          type = 'ceiling';
+          break;
         case 7:
         case 8:
           type = 'floor';
@@ -110,19 +110,6 @@ function makeTypeMap(world, rng) {
           break;
       }
       typeMap[row][col] = type;
-    }
-  }
-  // TODO(johnicholas): in a first pass, change all lonely, pillar-type ceiling tiles to 'floor'
-
-  // in a second pass, we change the 'ceiling' tiles that are north of
-  // non-ceiling tiles to be 'wall' tiles.
-  for (var row = 0; row < world.height/T; row++) {
-    for (var col = 0; col < world.width/T; col++) {
-      if (typeMap[row][col] == 'ceiling'
-        && typeMap[row+1] != undefined
-        && typeMap[row+1][col] != 'ceiling') {
-          typeMap[row][col] = 'wall';
-      }
     }
   }
   return typeMap;
