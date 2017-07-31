@@ -4,10 +4,10 @@
 
 *Art*
 * [ ] terrain art (static)
-* [ ] terrain art (slightly procedurally generated)
-* [ ] Space art (procedurally generated)
+* [X] terrain art (slightly procedurally generated)
+* [X] Space art (procedurally generated)
 * [ ] character art
-* [ ] ship art
+* [X] ship art
 * [ ] static sprites (ingredients, fuel)
 * [ ] background/splash
 * [ ] UI
@@ -18,9 +18,9 @@
 
 *Code*
 * [ ] Get the backend working properly, with some data validation
-* [ ] Generative maps with the spritesheet for tiles
+* [X] Generative maps with the spritesheet for tiles
 * [ ] Collision working on the maps
-* [ ] Slick text input
+* [X] Slick text input
 * [ ] Uh... the rest of the game
 
 *Misc*
