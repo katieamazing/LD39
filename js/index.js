@@ -127,9 +127,8 @@ class WineMaker {
   constructor (x, y, width, height) {
     this.x = x;
     this.y = y;
-    this.width = 100;
-    this.height = 100;
-    this.color = "blue";
+    this.width = width;
+    this.height = height;
     this.ingredients = [];
     this.wine = null;
   }
@@ -141,13 +140,18 @@ class WineMaker {
     }
   }
   draw() {
-    // draw machine
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
-    ctx.strokeStyle = this.color;
-    ctx.stroke();
-    // draw ingredients OR
+    // TODO: draw ingredients OR
     // draw finished wine
+    for (var i = 0; i < this.ingredients.length; i += 1) {
+      this.ingredients[i].x = this.x + i * 20 + 5;
+      this.ingredients[i].y = this.y + 10;
+      this.ingredients[i].draw();
+    }
+    if (this.wine !== null) {
+      this.wine.x = this.x + 20;
+      this.wine.y = this.y - 10;
+      this.wine.draw()
+    }
   }
   combine_ingredients(first, second, third) {
     if (first.type == second.type
@@ -170,9 +174,9 @@ class WineMaker {
       naming_mode = true;
       document.querySelector("#wine_naming_box").style.display = "inline";
       var that = this;
-      document.querySelector("button").onclick = function (e) {
-        that.wine.name = document.querySelector("input").value;
-        document.querySelector("input").value = "";
+      document.querySelector("#wine_button").onclick = function (e) {
+        that.wine.name = document.querySelector("#wine_name").value;
+        document.querySelector("#wine_name").value = "";
         currentState.stuff.push(that.wine);
         player.holding = that.wine;
         that.wine = null;
@@ -206,26 +210,22 @@ class WineMaker {
 // The launch thruster is responsible for tracking fuel and launching the
 // player into space.
 class LaunchThruster {
-  constructor (x, y) {
+  constructor (x, y, width, height) {
     this.x = x;
     this.y = y;
-    this.width = 100;
-    this.height = 100;
-    this.color = "red";
-    this.fuel = 5;
+    this.width = width;
+    this.height = height;
+    this.color = "yellow";
+    this.fuel = 3;
   }
 
   draw() {
     for (var i = 0; i < this.fuel; i++) {
       ctx.beginPath();
-      ctx.rect(this.x, this.y + this.height - (i+1) * this.height / 5, this.width, this.height / 6);
+      ctx.rect(this.x + 3, this.y + this.height - (i+1) * this.height / 3 + 5, this.width - 5, this.height / 3 - 8);
       ctx.fillStyle = this.color;
       ctx.fill();
     }
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
-    ctx.strokeStyle = this.color;
-    ctx.stroke();
   }
 
   action() {
@@ -385,11 +385,7 @@ class Space {
       this.native_space_stuff[i].draw();
     }
 
-    // TODO(johnicholas): draw ship for real
-    ctx.beginPath();
-    ctx.arc(this.ship.x, this.ship.y, 200, 0, 2*Math.PI);
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+    ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
 
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
@@ -446,11 +442,11 @@ class Space {
 }
 
 class Shelf {
-  constructor(x, y, i) {
+  constructor(x, y, w, h, i) {
     this.x = x;
     this.y = y;
-    this.width = 20;
-    this.height = 30;
+    this.width = w;
+    this.height = h;
     this.i = i;
     this.data = this.viewWine(i) || [];
   }
@@ -487,16 +483,12 @@ class Shelf {
   }
 
   draw() {
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, 20, 30);
-    ctx.fillStyle = "brown";
-    ctx.fill();
   }
 
   action() {
     console.log(this.data);
     if (player.holding != null && player.holding.name) {
-      this.sendWine(PLAYER, player.holding.name, this.i);
+      this.sendWine(playerName, player.holding.name, this.i);
       var index = currentState.stuff.indexOf(player.holding);
       if (index > -1) {
         currentState.stuff.splice(index, 1);
@@ -507,18 +499,34 @@ class Shelf {
 }
 class WineCellar {
   constructor(username, systems_seen) {
-    this.ship = {x: 650, y: 400};
+    this.ship = {x: 866, y: 378};
+    this.x = 200;
+    this.y = 200;
     this.native_hyperspace_stuff = [
       new Wormhole(canvas.width * 0.6, canvas.height * 0.5,
         function () {
           return new Space(username, systems_seen);
         }),
     ];
-
-    for (var i=0; i<5; i++){
-      let x = 220 + (i*30);
-      this.native_hyperspace_stuff.push(new Shelf(x, 300, i));
+    this.bg = [];
+    for (var row = 0; row < canvas.height/T; row++) {
+      let y = row * 64;
+      for (var col = 0; col < canvas.width/T; col++) {
+        let x = col * 64;
+        let argx = 0;
+        if (Math.random() < 0.8) {
+          argx = Math.floor(Math.random() * 12) * 64;
+        }
+        this.bg.push([argx, x, y]);
+      }
     }
+
+    this.native_hyperspace_stuff.push(new Shelf(26+this.x, 123+this.y, 59, 112, 0));
+    this.native_hyperspace_stuff.push(new Shelf(103+this.x, 165+this.y, 187-103, 234-165, 1));
+    this.native_hyperspace_stuff.push(new Shelf(206+this.x, 123+this.y, 59, 112, 2));
+    this.native_hyperspace_stuff.push(new Shelf(378+this.x, 123+this.y, 59, 112, 3));
+    this.native_hyperspace_stuff.push(new Shelf(468+this.x, 123+this.y, 59, 112, 4));
+
     this.stuff = [];
   }
   update() {
@@ -546,11 +554,15 @@ class WineCellar {
     ctx.fill();
 
     // draw sparkly space bits
-    // TODO
+    for (var img = 0; img < this.bg.length; img++) {
+      ctx.drawImage(space_bg_tiles, this.bg[img][0], 0, T, T, this.bg[img][1], this.bg[img][2], T, T);
+    }
 
     // draw wine room
-    ctx.drawImage(wine_room, 200, 200);
+    ctx.drawImage(wine_room, this.x, this.y);
 
+    // draw ship
+    ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
 
     // draw stuff
     for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
@@ -565,10 +577,6 @@ class WineCellar {
     if (player.holding) {
       player.holding.draw();
     }
-    // draw ship (radius)
-    ctx.beginPath();
-    ctx.arc(this.ship.x, this.ship.y, 200, 0, 2*Math.PI);
-    ctx.stroke();
   }
   action() {
     for (var i = 0; i < this.native_hyperspace_stuff.length; i++) {
@@ -637,6 +645,9 @@ class Planet {
     this.seed_string = seed_string;
     this.space_state = space_state;
     this.rng = new Math.seedrandom(this.seed_string);
+    let terrains = [terrain_sheet1, terrain_sheet2];
+    this.terrain = terrains[randBetween(this.rng, 0, terrains.length)];
+    this.ground = generateColor(this.rng);
     this.world =
       { width: 3 * canvas.width
       , height: 3 * canvas.height
@@ -723,11 +734,12 @@ class Planet {
     // draw background
     ctx.beginPath();
     ctx.rect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "grey";
+    ctx.fillStyle = this.ground;
     ctx.fill();
 
     ctx.save();
     ctx.translate(-1 * this.viewport.x, -1 * this.viewport.y);
+
 
     // draw terrain
     // TODO(johnicholas): draw less, not all this can be seen
@@ -745,16 +757,17 @@ class Planet {
         } else if (typeof this.viewMap[row][col] == 'number') {
           // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
           let spritesheet_index = this.viewMap[row][col];
-          ctx.drawImage(terrain_sheet1, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
+          ctx.drawImage(terrain_holes, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
         } else {
           // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
           let row_in_sheet = this.viewMap[row][col].row;
           let col_in_sheet = this.viewMap[row][col].col;
           // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
-          ctx.drawImage(terrain_sheet2, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
+          ctx.drawImage(this.terrain, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
         }
       }
     }
+    ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
@@ -764,10 +777,6 @@ class Planet {
     if (player.holding) {
       player.holding.draw();
     }
-    // draw ship (radius)
-    ctx.beginPath();
-    ctx.arc(canvas.width * 1.5, canvas.height * 1.5, 200, 0, 2*Math.PI);
-    ctx.stroke();
     ctx.restore();
   }
   action() {
@@ -822,7 +831,7 @@ class Planet {
 }
 
 // GLOBALS GLOBALS GLOBALS
-var PLAYER = "Katie";
+var playerName = "";
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 const T = 64; //tile size
@@ -844,11 +853,21 @@ player.draw = function () {
   ctx.fill();
 };
 (function () {
-  let launch_thruster = new LaunchThruster(-100, 0);
-  let wine_maker = new WineMaker(0, -100);
+  let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
+  let wine_maker = new WineMaker(40, 50, 55, 25);
   currentState.addShipStuff([player, launch_thruster, wine_maker]);
 }());
 let naming_mode = false;
+let shipimage = null;
+(function () {
+  let shipsvg = mySVG.cloneNode(true);
+  shipsvg.querySelector("#spaceDome").style.display = "inline";
+  shipsvg.querySelector("#spaceDome").setAttribute("transform", "scale(1.5)");
+  let shipwrap = document.createElement("div");
+  shipwrap.appendChild(shipsvg);
+  shipimage = new Image();
+  shipimage.src = "data:image/svg+xml;base64," + window.btoa(shipwrap.innerHTML);
+}());
 // END GLOBALS GLOBALS GLOBALS
 
 function transitionToState(destinationState) {
@@ -889,5 +908,13 @@ document.body.addEventListener("keyup", function (e) {
 });
 
 window.addEventListener("load", function () {
+  naming_mode = true;
+  document.querySelector("#player_naming_box").style.display = "inline";
+  var that = this;
+  document.querySelector("#player_naming_button").onclick = function (e) {
+    playerName = document.querySelector("#player").value;
+    document.querySelector("#player_naming_box").style.display = "none";
+    naming_mode = false;
+  }
   frame();
 });
