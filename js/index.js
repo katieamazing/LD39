@@ -536,7 +536,8 @@ class Shelf {
     this.width = w;
     this.height = h;
     this.i = i;
-    this.data = this.viewWine(i) || [];
+    this.data = [];
+    this.viewWine(i);
   }
 
   viewWine(shelf_number){
@@ -547,10 +548,13 @@ class Shelf {
     fetch("https://ktld39.webscript.io/get_list",
     { method: "POST", body: data })
     .then(function(response) {
+      console.log(response);
       return response.json();
     }).then(function(data) {
-      that.data = data;
-      // TODO: display data[shelf_number] to user
+      console.log(data);
+      if (data) {
+        that.data = data;
+      }
     });
   }
   sendWine(player, wine, shelf_number){
@@ -563,10 +567,14 @@ class Shelf {
     fetch("https://ktld39.webscript.io/add_wine",
     { method: "POST", body: data })
     .then(function(res){
+      console.log(res);
       return res.json();
     })
     .then(function(data){
-      that.data = data;
+      console.log(data);
+      if (data) {
+        that.data = data;
+      }
     })
   }
 
@@ -575,20 +583,24 @@ class Shelf {
 
   action() {
     console.log(this.data);
-    var listnode = document.createElement("ul");
-    for (var i = 0; i < this.data.length; i++) {
-      var itemnode = document.createElement("li");
-      itemnode.appendChild(document.createTextNode("Player: " + this.data[i].player + "  Wine: " + this.data[i].wine));
-      listnode.appendChild(itemnode);
-    }
-    displayInfoText(listnode);
-    if (player.holding != null && player.holding.name) {
+    if (player.holding !== null && player.holding.name) {
+      // sending
       this.sendWine(playerName, player.holding.name, this.i);
       var index = currentState.stuff.indexOf(player.holding);
       if (index > -1) {
         currentState.stuff.splice(index, 1);
       }
       player.holding = null;
+    } else if (player.holding === null && this.data.length > 0) {
+      // viewing
+      this.viewWine(i);
+      var listnode = document.createElement("ul");
+      for (var i = 0; i < this.data.length; i++) {
+        var itemnode = document.createElement("li");
+        itemnode.appendChild(document.createTextNode("Player: " + this.data[i].player + "  Wine: " + this.data[i].wine));
+        listnode.appendChild(itemnode);
+      }
+      displayInfoText(listnode);
     }
   }
 }
