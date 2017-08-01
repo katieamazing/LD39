@@ -11,6 +11,12 @@ function dist(a, b) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function pointInEllipse(p, ellipse) {
+  let dx = p.x - ellipse.x;
+  let dy = p.y - ellipse.y;
+  return (dx * dx / (102*102) + dy * dy / (82.5*82.5)) < 1;
+}
+
 // A generic rectangle against rectangle collision check, between any two
 // objects which have x, y, width, and height properties.
 function colCheck(a, b){
@@ -30,35 +36,51 @@ function generateColor(rng) {
   return "rgb(" + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ")";
 }
 
+function sound(src) {
+  this.sound = document.createElement('audio');
+  this.sound.src = src;
+  this.sound.setAttribute('preload', 'auto');
+  this.sound.setAttribute('controls', 'none');
+  this.sound.style.display = 'none';
+  this.sound.volume = 0.6;
+  document.body.appendChild(this.sound);
+  this.play = function(){
+      this.sound.play();
+  }
+  this.stop = function(){
+      this.sound.pause();
+  }
+}
+
 class Ingredient {
-  constructor (x, y, width, height, color, type, description) {
+  constructor (x, y, width, height, image, type, description) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    this.color = color;
+    this.image = image;
     this.type = type;
     this.description = description;
+    this.sfx = new sound("audio/place_item.wav");
   }
 
   draw() {
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
-    ctx.fillStyle = this.color;
-    ctx.fill();
+    ctx.drawImage(this.image, this.x-33, this.y-40);
   }
 
   action() {
     if (player.holding == null) {
       player.holding = this;
+      this.sfx.play();
     } else if (player.holding == this) {
       player.holding = null;
+      this.sfx.play();
     }
   }
 
   move(){ //move with player
-    this.x = player.x;
-    this.y = player.y;
+    this.x = player.x + 30;
+    this.y = player.y + 40;
   }
 }
 
@@ -73,6 +95,7 @@ class Wine {
     this.color = color;
     this.type = 4;
     this.description = 'strong';
+    this.sfx = new sound("audio/place_item.wav");
   }
 
   draw() {
@@ -85,8 +108,10 @@ class Wine {
   action() {
     if (player.holding == null) {
       player.holding = this;
+      this.sfx.play();
     } else if (player.holding == this) {
       player.holding = null;
+      this.sfx.play();
     }
   }
 
@@ -102,24 +127,23 @@ class Wine {
 // avoid creating the destination state object until it is actually necessary.
 class Wormhole {
   constructor (x, y, destination_fn) {
-    this.x = x;
-    this.y = y;
-    this.width = 10;
-    this.height = 10;
+    this.x = canvas.width-430;
+    this.y = canvas.height-324;
+    this.width = 385;
+    this.height = 180;
     this.color = "green";
     this.radius = 10;
     this.destination_fn = destination_fn;
+    this.sfx = new sound("audio/spaceship.wav");
   }
 
   draw() {
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
-    ctx.fillStyle = this.color;
-    ctx.fill();
+    ctx.drawImage(wormhole, this.x, this.y);
   }
 
   action() {
     transitionToState(this.destination_fn())
+    this.sfx.play();
   }
 }
 
@@ -131,6 +155,8 @@ class WineMaker {
     this.height = height;
     this.ingredients = [];
     this.wine = null;
+    this.sfx = new sound("audio/winemaking.wav");
+    this.sfxi = new sound("audio/drop_ingredient_in_winemaker.wav");
   }
   capacity() {
     if (this.wine === null) {
@@ -171,6 +197,7 @@ class WineMaker {
   action() {
     if (player.holding === null && this.wine !== null) {
       console.log("Picking up wine!");
+      this.sfx.play();
       naming_mode = true;
       document.querySelector("#wine_naming_box").style.display = "inline";
       var that = this;
@@ -185,10 +212,12 @@ class WineMaker {
       }
     } else if (player.holding === null && this.ingredients.length > 0) {
       console.log("Taking an ingredient out!");
+      this.sfxi.play();
       player.holding = this.ingredients.pop();
       currentState.stuff.push(player.holding);
     } else if (player.holding !== null && this.capacity() > 0) {
       console.log("Putting an ingredient in!");
+      this.sfxi.play();
       var index = currentState.stuff.indexOf(player.holding);
       if (index > -1) {
         currentState.stuff.splice(index, 1);
@@ -210,21 +239,21 @@ class WineMaker {
 // The launch thruster is responsible for tracking fuel and launching the
 // player into space.
 class LaunchThruster {
+  //new LaunchThruster(-79, 22, 50, 50) ???? where are these magic numbers.
   constructor (x, y, width, height) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    this.color = "yellow";
+    this.sprite = fuel;
     this.fuel = 3;
   }
 
   draw() {
     for (var i = 0; i < this.fuel; i++) {
-      ctx.beginPath();
-      ctx.rect(this.x + 3, this.y + this.height - (i+1) * this.height / 3 + 5, this.width - 5, this.height / 3 - 8);
-      ctx.fillStyle = this.color;
-      ctx.fill();
+      ctx.drawImage(this.sprite, this.x + 3, this.y + this.height - (i+1) * this.height/3, this.width - 5, this.height / 3-8);
+      //ctx.rect(this.x + 3, this.y + this.height - (i+1) * this.height / 3 + 5, this.width - 5, this.height / 3 - 8);
+      //TODO fix this!
     }
   }
 
@@ -233,7 +262,7 @@ class LaunchThruster {
       console.log("Launch!");
       this.fuel -= 1;
       transitionToState(currentState.space_state);
-    } else if (player.holding !== null && this.fuel < 5) {
+    } else if (player.holding !== null && this.fuel < 3) {
       console.log("Refuel!");
       this.fuel += 1;
       var index = currentState.stuff.indexOf(player.holding);
@@ -241,11 +270,21 @@ class LaunchThruster {
         currentState.stuff.splice(index, 1);
       }
       player.holding = null;
+    } else if (player.holding === null && this.fuel == 0) {
+      var textNode = document.createTextNode("Going to have to refuel to get there. Go stuff a fruit in the fuel tanks.")
+      displayInfoText(textNode);
     }
   }
 }
 
-
+function displayInfoText(s) {
+  document.querySelector("#text_display_box").style.display = "inline";
+  document.querySelector("#text_display").appendChild(s);
+  document.querySelector("#text_box_button").onclick = function (e) {
+    document.querySelector("#text_display").innerHTML = "";
+    document.querySelector("#text_display_box").style.display = "none";
+  }
+}
 
 // A FloatingPlanet is visible in sspace, and is
 // responsible for getting the player from space to one particular planet.
@@ -301,6 +340,56 @@ class FloatingPlanet {
   }
 
 
+}
+
+class Splash {
+  constructor(){
+    this.rng = new Math.seedrandom("HiThereWineLover");
+    this.bg = [];
+    for (var row = 0; row < canvas.height/T; row++) {
+      let y = row * 64;
+      for (var col = 0; col < canvas.width/T; col++) {
+        let x = col * 64;
+        let argx = 0;
+        if (this.rng() < 0.8) {
+          argx = Math.floor(this.rng() * 12) * 64;
+        }
+        this.bg.push([argx, x, y]);
+      }
+    }
+  }
+
+  update() {
+
+  }
+
+  draw() {
+    for (var img = 0; img < this.bg.length; img++) {
+      ctx.drawImage(space_bg_tiles, this.bg[img][0], 0, T, T, this.bg[img][1], this.bg[img][2], T, T);
+    }
+    ctx.drawImage(splash, canvas.width/2 - 300, canvas.height/2 - 250);
+  }
+
+  getShipStuff() {
+    let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
+    let wine_maker = new WineMaker(40, 50, 55, 25);
+    return [player, launch_thruster, wine_maker];
+  }
+
+  action() {
+    if (!naming_mode) {
+      naming_mode = true;
+      document.querySelector("#player_naming_box").style.display = "inline";
+      var that = this;
+      document.querySelector("#player_naming_button").onclick = function (e) {
+        playerName = document.querySelector("#player").value;
+        document.querySelector("#player_naming_box").style.display = "none";
+        naming_mode = false;
+        var space = new Space(playerName, 0);
+        transitionToState(space);
+      }
+    }
+  }
 }
 
 class Space {
@@ -364,8 +453,8 @@ class Space {
       this.stuff[i].x += dx;
       this.stuff[i].y += dy;
     }
-    player.x = this.ship.x;
-    player.y = this.ship.y;
+    player.x = this.ship.x - 30;
+    player.y = this.ship.y - 30;
   }
 
   draw() {
@@ -385,8 +474,8 @@ class Space {
       this.native_space_stuff[i].draw();
     }
 
+    ctx.drawImage(sun, canvas.width-148, 20);
     ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
-
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
       this.stuff[i].draw();
@@ -418,8 +507,7 @@ class Space {
   getShipStuff() {
     var accumulator = [];
     for (var i = 0; i < this.stuff.length; i++) {
-      // TODO(johnicholas): move the ship radius up and out
-      if (dist(this.stuff[i], this.ship) < 200) {
+      if (colCheck(this.stuff[i], {x: this.ship.x - 68, y: this.ship.y, width: 136, height: 52}) || pointInEllipse(this.stuff[i], this.ship)) {
         // we need to convert to ship-relative coordinates
         this.stuff[i].x -= this.ship.x;
         this.stuff[i].y -= this.ship.y;
@@ -487,6 +575,13 @@ class Shelf {
 
   action() {
     console.log(this.data);
+    var listnode = document.createElement("ul");
+    for (var i = 0; i < this.data.length; i++) {
+      var itemnode = document.createElement("li");
+      itemnode.appendChild(document.createTextNode("Player: " + this.data[i].player + "  Wine: " + this.data[i].wine));
+      listnode.appendChild(itemnode);
+    }
+    displayInfoText(listnode);
     if (player.holding != null && player.holding.name) {
       this.sendWine(playerName, player.holding.name, this.i);
       var index = currentState.stuff.indexOf(player.holding);
@@ -531,20 +626,33 @@ class WineCellar {
   }
   update() {
     if (keys[39] || keys[68]) {
-      player.x += 4;
+      if (player.velX < player.speed) {
+        player.velX++;
+      }
     }
     if (keys[37] || keys[65]) {
-      player.x -= 4;
+      if (player.velX > -player.speed) {
+        player.velX--;
+      }
     }
     if (keys[38] || keys[87]) {
-      player.y -= 4;
+      if (player.velY > -player.speed) {
+        player.velY--;
+      }
     }
     if (keys[40] || keys[83]) {
-      player.y += 4;
+      if (player.velY < player.speed) {
+        player.velY++;
+      }
     }
     if (player.holding !== null) {
       player.holding.move();
     }
+    player.velX *= 0.8; //friction
+    player.velY *= 0.8; //friction
+
+    player.x += player.velX;
+    player.y += player.velY;
   }
   draw() {
     // draw background
@@ -609,7 +717,7 @@ class WineCellar {
     var accumulator = [];
     for (var i = 0; i < this.stuff.length; i++) {
       // TODO(johnicholas): move the ship radius up and out
-      if (dist(this.stuff[i], this.ship) < 200) {
+      if (colCheck(this.stuff[i], {x: this.ship.x - 68, y: this.ship.y, width: 136, height: 52}) || pointInEllipse(this.stuff[i], this.ship) || this.stuff[i] == player) {
         // we need to convert to ship-relative coordinates
         this.stuff[i].x -= this.ship.x;
         this.stuff[i].y -= this.ship.y;
@@ -645,7 +753,7 @@ class Planet {
     this.seed_string = seed_string;
     this.space_state = space_state;
     this.rng = new Math.seedrandom(this.seed_string);
-    let terrains = [terrain_sheet1, terrain_sheet2];
+    let terrains = [terrain_sheet1, terrain_sheet2, terrain_sheet3];
     this.terrain = terrains[randBetween(this.rng, 0, terrains.length)];
     this.ground = generateColor(this.rng);
     this.world =
@@ -663,14 +771,16 @@ class Planet {
       y: canvas.height * 1.5
     }
     // we scatter random ingredients over the world
+    this.common_ingredient_image = this.fruitImage(this.rng);
     this.common_ingredient_type = randBetween(this.rng, 2, 4);
     this.common_ingredient_desc =
       descs[this.common_ingredient_type][randBetween(this.rng, 0, descs[this.common_ingredient_type].length)];
-      this.common_ingredient_color = generateColor(this.rng);
+
+    this.rare_ingredient_image = this.fruitImage(this.rng);
     this.rare_ingredient_type = randBetween(this.rng, 0, 5);
     this.rare_ingredient_desc =
       descs[this.rare_ingredient_type][randBetween(this.rng, 0, descs[this.rare_ingredient_type].length)];
-    this.rare_ingredient_color = generateColor(this.rng);
+
     this.stuff = [];
     for (var i = 0; i < randBetween(this.rng, 16, 20); i += 1) {
       this.stuff.push(new Ingredient(
@@ -678,7 +788,7 @@ class Planet {
         randBetween(this.rng, 0, this.world.height),
         10,
         10,
-        this.common_ingredient_color,
+        this.common_ingredient_image,
         this.common_ingredient_desc
       ));
     }
@@ -688,27 +798,72 @@ class Planet {
         randBetween(this.rng, 0, this.world.height),
         10,
         10,
-        this.rare_ingredient_color,
+        this.rare_ingredient_image,
         this.rare_ingredient_desc
       ));
     }
   }
+  fruitImage(rng) {
+    let fruitsvg = mySVG.cloneNode(true);
+    let layer_1 = null;
+    let layer_2 = null;
+    if (rng() < 0.5) {
+      layer_1 = fruitsvg.querySelector("#f1_b");
+      layer_2 = fruitsvg.querySelector("#f1_" + randBetween(rng, 0, 3));
+    } else {
+      layer_1 = fruitsvg.querySelector("#f2_b");
+      layer_2 = fruitsvg.querySelector("#f2_" + randBetween(rng, 0, 5));
+    }
+
+    layer_1.querySelector("path").style.fill = generateColor(this.rng);
+
+    let layer_2Paths = layer_2.querySelectorAll("path");
+    let layer_2PC = generateColor(this.rng);
+    for (var i = 0; i < layer_2Paths.length; i++) {
+      layer_2Paths[i].style.fill = layer_2PC;
+    }
+
+    layer_1.style.display = "inline";
+    layer_2.style.display = "inline";
+
+
+    var wrap = document.createElement("div");
+    wrap.appendChild(fruitsvg);
+    var image = new Image();
+    image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
+    return image;
+  }
+
   update() {
     if (keys[39] || keys[68]) {
-      player.x += 4;
+      if (player.velX < player.speed) {
+        player.velX++;
+      }
     }
     if (keys[37] || keys[65]) {
-      player.x -= 4;
+      if (player.velX > -player.speed) {
+        player.velX--;
+      }
     }
     if (keys[38] || keys[87]) {
-      player.y -= 4;
+      if (player.velY > -player.speed) {
+        player.velY--;
+      }
     }
     if (keys[40] || keys[83]) {
-      player.y += 4;
+      if (player.velY < player.speed) {
+        player.velY++;
+      }
     }
     if (player.holding !== null) {
       player.holding.move();
     }
+    player.velX *= 0.8; //friction
+    player.velY *= 0.8; //friction
+
+    player.x += player.velX;
+    player.y += player.velY;
+
     var new_viewport_x;
     var new_viewport_y;
     if (player.x < this.viewport.x + canvas.width / 3.0) {
@@ -730,6 +885,7 @@ class Planet {
       this.viewport.y = new_viewport_y;
     }
   }
+
   draw() {
     // draw background
     ctx.beginPath();
@@ -779,6 +935,7 @@ class Planet {
     }
     ctx.restore();
   }
+
   action() {
     var found = [];
     for (var i = 0; i < this.stuff.length; i++) {
@@ -803,7 +960,7 @@ class Planet {
     var accumulator = [];
     for (var i = 0; i < this.stuff.length; i++) {
       // TODO(johnicholas): move the ship radius up and out
-      if (dist(this.stuff[i], this.ship) < 200) {
+      if (colCheck(this.stuff[i], {x: this.ship.x - 68, y: this.ship.y, width: 136, height: 52}) || pointInEllipse(this.stuff[i], this.ship)) {
         // we need to convert to ship-relative coordinates
         this.stuff[i].x -= this.ship.x;
         this.stuff[i].y -= this.ship.y;
@@ -837,27 +994,49 @@ var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
-let currentState = new Space("KT", 0);
+let currentState = new Splash();
 let keys = [];
+
 let player = {
-  x: 0,
-  y: 0,
-  width: 20,
-  height: 20,
+  x: -300,
+  y: -300,
+  width: 468/6,
+  height: 100,
+  speed: 3.0,
+  velX: 0,
+  velY: 0,
   holding: null,
+  sprite: player_static
 }
-player.draw = function () {
-  ctx.beginPath();
-  ctx.rect(this.x, this.y, this.width, this.height);
-  ctx.fillStyle = "white";
-  ctx.fill();
+let player_frame = 0;
+
+player.draw = function () { //TODO needs global player_frame
+  var xarg = 0;
+  const SMALL = 0.01;
+  if (player.velX > SMALL) { //facing right, walking
+    player.sprite = document.querySelector("#player_walk_R");
+    argx = player_frame*player.width;
+  } else if (player.velX < -SMALL) { //facing left, walking
+    player.sprite = document.querySelector("#player_walk_L");
+    argx = player_frame*player.width;
+  } else { //standing
+    player.sprite = document.querySelector("#player_static");
+    argx = 5*player.width;
+  }
+
+  ctx.drawImage(player.sprite, argx, 0, player.width, player.height, player.x, player.y, player.width, player.height);
+  // debug visualization
+  //ctx.beginPath();
+  //ctx.rect(this.x, this.y, this.width, this.height);
+  //if (colCheck(this, {x: currentState.ship.x - 68*1.5, y: currentState.ship.y, width: 68*1.5*2, height: 55*1.5}) || pointInEllipse(this, currentState.ship)) {
+  //  ctx.fillStyle = "red";
+  //} else {
+  //ctx.strokeStyle = "red";
+  //ctx.stroke();
 };
-(function () {
-  let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
-  let wine_maker = new WineMaker(40, 50, 55, 25);
-  currentState.addShipStuff([player, launch_thruster, wine_maker]);
-}());
+
 let naming_mode = false;
+let help_mode = false;
 let shipimage = null;
 (function () {
   let shipsvg = mySVG.cloneNode(true);
@@ -876,8 +1055,13 @@ function transitionToState(destinationState) {
 }
 
 function frame() {
-  currentState.update()
-  currentState.draw();
+  if (help_mode) {
+    ctx.drawImage(help, 0, 0);
+  } else {
+    currentState.update()
+    currentState.draw();
+    ctx.drawImage(help_icon, canvas.width-20, 0);
+  }
   requestAnimationFrame(frame);
 }
 
@@ -907,14 +1091,24 @@ document.body.addEventListener("keyup", function (e) {
     keys[e.keyCode] = false;
 });
 
-window.addEventListener("load", function () {
-  naming_mode = true;
-  document.querySelector("#player_naming_box").style.display = "inline";
-  var that = this;
-  document.querySelector("#player_naming_button").onclick = function (e) {
-    playerName = document.querySelector("#player").value;
-    document.querySelector("#player_naming_box").style.display = "none";
-    naming_mode = false;
+canvas.addEventListener("click", function (e) {
+  var x;
+  var y;
+  if (e.pageX || e.pageY) {
+    x = e.pageX;
+    y = e.pageY;
   }
+  else {
+    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+  }
+  x -= canvas.offsetLeft;
+  y -= canvas.offsetTop;
+  if (x > canvas.width - 20 && x < canvas.width && y > 0 && y < 20) {
+    help_mode = !help_mode;
+  }
+});
+
+window.addEventListener("load", function () {
   frame();
 });
