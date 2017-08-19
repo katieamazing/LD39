@@ -1,5 +1,5 @@
 let rules = {
-  floor: [],
+  flat: [],
   hole: [
     { tileIndex:  0, map: { n: "!hole", e: "!hole", s: "!hole", w: "!hole"} },
     { tileIndex:  1, map: { n:  "hole", e: "!hole", s: "!hole", w: "!hole"} },
@@ -18,100 +18,149 @@ let rules = {
     { tileIndex: 14, map: { n: "!hole", e:  "hole", s:  "hole", w:  "hole"} },
     { tileIndex: 15, map: { n:  "hole", e:  "hole", s:  "hole", w:  "hole"} },
   ],
-  ceiling: [
+  terrain: [
     // Put this rule up top to make clearing screen faster.
-    { tileIndex: {row:4, col:1}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
+    { tileIndex: {row:4, col:1}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
 
     // --- Row 1 ---
-    { tileIndex: {row:1, col:0}, map: { n:"!ceiling", w:"!ceiling", e:"!ceiling", s:"ceiling"} },
-    { tileIndex: {row:1, col:1}, map: { n:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:0, col:4}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:5, col:6}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
-    { tileIndex: {row:4, col:3}, map: { n:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:0, col:2}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:0, col:6}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", sw:"!ceiling", s:"ceiling" } },
-    { tileIndex: {row:2, col:5}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling"} },
-    { tileIndex: {row:3, col:4}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling"} },
-    { tileIndex: {row:5, col:1}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling"} },
+    { tileIndex: {row:1, col:0}, map: { n:"!terrain", w:"!terrain", e:"!terrain", s:"terrain"} },
+    { tileIndex: {row:1, col:1}, map: { n:"!terrain", w:"!terrain", e:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:0, col:4}, map: { n:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:5, col:6}, map: { n:"!terrain", w:"terrain", e:"!terrain", sw:"terrain", s:"terrain" } },
+    { tileIndex: {row:4, col:3}, map: { n:"!terrain", w:"!terrain", e:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:0, col:2}, map: { n:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:0, col:6}, map: { n:"!terrain", w:"terrain", e:"!terrain", sw:"!terrain", s:"terrain" } },
+    { tileIndex: {row:2, col:5}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"!terrain"} },
+    { tileIndex: {row:3, col:4}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"!terrain"} },
+    { tileIndex: {row:5, col:1}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"terrain"} },
 
     // --- Row 2 ---
-    { tileIndex: {row:4, col:5}, map: { n:"ceiling", w:"!ceiling", e:"!ceiling", s:"ceiling" } },
-    { tileIndex: {row:4, col:0}, map: { n:"ceiling", ne:"ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"ceiling" } },
-    //{ tileIndex: {row:4, col:1}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:4, col:2}, map: { nw:"ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
-    { tileIndex: {row:2, col:0}, map: { n:"ceiling", ne:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"!ceiling" } },
-    //{ tileIndex: ??, map: { nw:"!ceiling", n:"!ceiling", ne:"!ceiling", w:"!ceiling", e:"!ceiling", sw:"!ceiling", s:"!ceiling", se:"!ceiling" } },
-    { tileIndex: {row:3, col:6}, map: { nw:"!ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"!ceiling", s:"ceiling" } },
-    { tileIndex: {row:5, col:2}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:5, col:3}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:1, col:3}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
+    { tileIndex: {row:4, col:5}, map: { n:"terrain", w:"!terrain", e:"!terrain", s:"terrain" } },
+    { tileIndex: {row:4, col:0}, map: { n:"terrain", ne:"terrain", w:"!terrain", e:"terrain", s:"terrain", se:"terrain" } },
+    //{ tileIndex: {row:4, col:1}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:4, col:2}, map: { nw:"terrain", n:"terrain", w:"terrain", e:"!terrain", sw:"terrain", s:"terrain" } },
+    { tileIndex: {row:2, col:0}, map: { n:"terrain", ne:"!terrain", w:"!terrain", e:"terrain", s:"terrain", se:"!terrain" } },
+    //{ tileIndex: ??, map: { nw:"!terrain", n:"!terrain", ne:"!terrain", w:"!terrain", e:"!terrain", sw:"!terrain", s:"!terrain", se:"!terrain" } },
+    { tileIndex: {row:3, col:6}, map: { nw:"!terrain", n:"terrain", w:"terrain", e:"!terrain", sw:"!terrain", s:"terrain" } },
+    { tileIndex: {row:5, col:2}, map: { nw:"terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:5, col:3}, map: { nw:"!terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:1, col:3}, map: { nw:"!terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"terrain" } },
 
     // --- Row 3 ---
-    { tileIndex: {row:4, col:6}, map: { n:"ceiling", w:"!ceiling", e:"!ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:5}, map: { n:"ceiling", ne:"ceiling", w:"!ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:3, col:3}, map: { nw:"ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:6}, map: { nw:"ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:0}, map: { n:"ceiling", ne:"!ceiling", w:"!ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:3}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:4, col:4}, map: { nw:"!ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", s:"!ceiling" } },
-    { tileIndex: {row:1, col:5}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:3, col:1}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:2, col:3}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"ceiling" } },
+    { tileIndex: {row:4, col:6}, map: { n:"terrain", w:"!terrain", e:"!terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:5}, map: { n:"terrain", ne:"terrain", w:"!terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:3, col:3}, map: { nw:"terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:6}, map: { nw:"terrain", n:"terrain", w:"terrain", e:"!terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:0}, map: { n:"terrain", ne:"!terrain", w:"!terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:3}, map: { nw:"!terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:4, col:4}, map: { nw:"!terrain", n:"terrain", w:"terrain", e:"!terrain", s:"!terrain" } },
+    { tileIndex: {row:1, col:5}, map: { nw:"terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:3, col:1}, map: { nw:"!terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:2, col:3}, map: { nw:"!terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"terrain" } },
 
     // --- Row 4 ---
-    { tileIndex: {row:0, col:1}, map: { n:"!ceiling", w:"!ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:5, col:4}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:4}, map: { n:"!ceiling", w:"ceiling", e:"!ceiling", s:"!ceiling" } },
-    { tileIndex: {row:0, col:5}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:2, col:6}, map: { nw:"ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"!ceiling", s:"ceiling" } },
-    { tileIndex: {row:5, col:0}, map: { n:"ceiling", ne:"ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:0, col:3}, map: { n:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:3, col:5}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:2, col:1}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"!ceiling" } },
+    { tileIndex: {row:0, col:1}, map: { n:"!terrain", w:"!terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:5, col:4}, map: { n:"!terrain", w:"terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:4}, map: { n:"!terrain", w:"terrain", e:"!terrain", s:"!terrain" } },
+    { tileIndex: {row:0, col:5}, map: { n:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:2, col:6}, map: { nw:"terrain", n:"terrain", w:"terrain", e:"!terrain", sw:"!terrain", s:"terrain" } },
+    { tileIndex: {row:5, col:0}, map: { n:"terrain", ne:"terrain", w:"!terrain", e:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:0, col:3}, map: { n:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:3, col:5}, map: { nw:"terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:2, col:1}, map: { nw:"!terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"!terrain" } },
 
     // --- Row 5 ---
-    { tileIndex: {row:2, col:2}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:3, col:2}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:3, col:0}, map: { n:"ceiling", ne:"!ceiling", w:"!ceiling", e:"ceiling", s:"ceiling", se:"ceiling" } },
-    { tileIndex: {row:6, col:1}, map: { nw:"!ceiling", n:"ceiling", ne:"ceiling", w:"ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:6, col:2}, map: { nw:"ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", s:"!ceiling" } },
-    { tileIndex: {row:1, col:6}, map: { nw:"!ceiling", n:"ceiling", w:"ceiling", e:"!ceiling", sw:"ceiling", s:"ceiling" } },
-    { tileIndex: {row:1, col:2}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"ceiling", s:"ceiling", se:"!ceiling" } },
-    { tileIndex: {row:5, col:5}, map: { nw:"!ceiling", n:"ceiling", ne:"!ceiling", w:"ceiling", e:"ceiling", sw:"!ceiling", s:"ceiling", se:"ceiling" } },
+    { tileIndex: {row:2, col:2}, map: { nw:"terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:3, col:2}, map: { nw:"!terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:3, col:0}, map: { n:"terrain", ne:"!terrain", w:"!terrain", e:"terrain", s:"terrain", se:"terrain" } },
+    { tileIndex: {row:6, col:1}, map: { nw:"!terrain", n:"terrain", ne:"terrain", w:"terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:6, col:2}, map: { nw:"terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", s:"!terrain" } },
+    { tileIndex: {row:1, col:6}, map: { nw:"!terrain", n:"terrain", w:"terrain", e:"!terrain", sw:"terrain", s:"terrain" } },
+    { tileIndex: {row:1, col:2}, map: { nw:"!terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"terrain", s:"terrain", se:"!terrain" } },
+    { tileIndex: {row:5, col:5}, map: { nw:"!terrain", n:"terrain", ne:"!terrain", w:"terrain", e:"terrain", sw:"!terrain", s:"terrain", se:"terrain" } },
 
     // a lonely pillar
-    { tileIndex: {row:0, col:0}, map: { n:"!ceiling", w:"!ceiling", e:"!ceiling", s:"!ceiling", } },
+    { tileIndex: {row:0, col:0}, map: { n:"!terrain", w:"!terrain", e:"!terrain", s:"!terrain", } },
   ],
   wall: []
 };
 
+function isTerrain(row, col, center, typeMap) {
+  if (typeMap[row] == undefined || typeMap[row][col] == undefined) {
+    // if we look beyond the edge of the map, we find a copy of the center cell
+    type = center;
+  } else {
+    type = typeMap[row][col];
+  }
+  return type == 'terrain';
+}
+
+
+function makeTypeMapHoles(world, rng) {
+  var typeMap = makeTypeMap(world, rng);
+
+  //add some holes
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
+      if (Math.random() < 0.01){
+        typeMap[row][col] = 'hole';
+      }
+    }
+  }
+
+  return typeMap;
+}
+
 function makeTypeMap(world, rng) {
   var typeMap = [];
+
   for (var row = 0; row < world.height/T; row++) {
     typeMap[row] = [];
     for (var col = 0; col < world.width/T; col++) {
       let type = null;
-      switch (Math.floor(rng() * 10)) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-          type = 'ceiling';
-          break;
-        case 7:
-        case 8:
-          type = 'floor';
-          break;
-        case 9:
-          type = 'hole';
-          break;
+      let percent = Math.floor(rng() * 100);
+      if (percent < 80) {
+        type = 'flat';
+      } else {
+        type = 'terrain';
       }
       typeMap[row][col] = type;
     }
   }
+  // erode 4-way pillars steps
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
+      var count = 0;
+      if( isTerrain( row-1, col,   typeMap[row][col], typeMap ) ) { count++; }
+      if( isTerrain( row,   col-1, typeMap[row][col], typeMap ) ) { count++; }
+      if( isTerrain( row,   col+1, typeMap[row][col], typeMap ) ) { count++; }
+      if( isTerrain( row+1, col,   typeMap[row][col], typeMap ) ) { count++; }
+      if (count == 0) {
+        console.log('flatten it!')
+        typeMap[row][col] = 'flat';
+      }
+    }
+  }
+
+  // for (var i = 0; i < 4; i += 1) {
+  //   for (var row = 0; row < world.height/T; row++) {
+  //     for (var col = 0; col < world.width/T; col++) {
+  //       var count = 0;
+  //       if( isTerrain( row-1, col-1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row-1, col,   typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row-1, col+1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row,   col-1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row,   col+1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row+1, col-1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row+1, col,   typeMap[row][col], typeMap ) ) { count++; }
+  //       if( isTerrain( row+1, col+1, typeMap[row][col], typeMap ) ) { count++; }
+  //       if (Math.floor(rng() * 6) > count) {
+  //         typeMap[row][col] = 'flat';
+  //       }
+  //     }
+  //   }
+  // }
+
   return typeMap;
 }
 

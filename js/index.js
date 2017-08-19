@@ -23,6 +23,15 @@ function colCheck(a, b){
   return !(b.x > a.x + a.width) && !(a.x > b.x + b.width) && !(b.y > a.y + a.height) && !(a.y > b.y + b.height);
 }
 
+function colArea(a, b){
+  if (!colCheck(a, b)) {
+    return 0;
+  } else {
+    return (Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) *
+      (Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+  }
+}
+
 // A generic circle against circle collision check, between any two objects
 // which have x, y, and radius properties.
 function circleColCheck(a, b) {
@@ -32,6 +41,7 @@ function circleColCheck(a, b) {
 function randBetween(rng, floor, ceil) {
   return Math.floor(rng() * (ceil - floor)) + floor;
 }
+
 function generateColor(rng) {
   return "rgb(" + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ", " + randBetween(rng, 20, 220) + ")";
 }
@@ -53,13 +63,14 @@ function sound(src) {
 }
 
 class Ingredient {
-  constructor (x, y, width, height, image, type, description) {
+  constructor (x, y, width, height, image, type, rarity, description) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.image = image;
     this.type = type;
+    this.rarity = rarity;
     this.description = description;
     this.sfx = new sound("audio/place_item.wav");
   }
@@ -76,6 +87,7 @@ class Ingredient {
     if (player.holding == null) {
       player.holding = this;
       this.sfx.play();
+      makeToast(this.description);
     } else if (player.holding == this) {
       player.holding = null;
       this.sfx.play();
@@ -91,14 +103,14 @@ class Ingredient {
 // Wine acts just like any other ingredient?
 // Except maybe it is drawn differently?
 class Wine {
-  constructor (x, y, width, height, color) {
+  constructor (x, y, width, height, type, rarity, description) {
     this.x = x;
     this.y = y;
     this.width = 20;
     this.height = 50;
-    this.color = color;
     this.type = 4;
-    this.description = 'strong';
+    this.rarity = rarity;
+    this.description = description
     this.sfx = new sound("audio/place_item.wav");
   }
 
@@ -114,6 +126,7 @@ class Wine {
     if (player.holding == null) {
       player.holding = this;
       this.sfx.play();
+      makeToast(this.description);
     } else if (player.holding == this) {
       player.holding = null;
       this.sfx.play();
@@ -126,17 +139,44 @@ class Wine {
   }
 }
 
+// Stuff that have action and draw methods, but that the player may not pick up.
+// Assumes sprite sheets 1*T high, constructor expects an x value to start clip.
+class StaticInteractable {
+  constructor (x, y, width, height, image, slice, type, description) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.image = image;
+    this.slice = slice;
+    this.type = type;
+    this.description = description;
+    this.type = type;
+    //this.sfx = new sound("audio/place_item.wav");
+  }
+
+  draw() {
+    ctx.drawImage(this.image, this.slice, 0, T, T, this.x, this.y, T, T);
+  }
+
+  action() {
+    if (this.type == "stair") {
+      currentState.transferUp();
+    }
+  }
+}
+
+
 // The wormhole acts like a one-way door between space and the hyperspatial
 // wine cellar between the stars.
 // It takes a destination function instead of a destination, so that we can
 // avoid creating the destination state object until it is actually necessary.
 class Wormhole {
   constructor (x, y, destination_fn) {
-    this.x = canvas.width-430;
-    this.y = canvas.height-324;
-    this.width = 385;
-    this.height = 180;
-    this.color = "green";
+    this.x = canvas.width-366;
+    this.y = canvas.height-248;
+    this.width = 346;
+    this.height = 228;
     this.radius = 10;
     this.destination_fn = destination_fn;
     this.sfx = new sound("audio/spaceship.wav");
@@ -158,6 +198,7 @@ class WineMaker {
     this.y = y;
     this.width = width;
     this.height = height;
+    this.rng = new Math.seedrandom("winemakingfun");
     this.ingredients = [];
     this.wine = null;
     this.sfx = new sound("audio/winemaking.wav");
@@ -184,21 +225,71 @@ class WineMaker {
       this.wine.draw()
     }
   }
-  combine_ingredients(first, second, third) {
-    if (first.type == second.type
-      && second.type == third.type) {
+  combine_ingredients(a, b, c) {
+    let averageRarity = (a.rarity + b.rarity + c.rarity) / 3;
+
+    // determine color
+    let color = null,
+      possibleColors = null;
+    if (a.type == b.type
+      && b.type == c.type) {
       // all equal
-      return new Wine(-100, -100, 10, 10, "red");
-    } else if (first.type != second.type
-      && second.type != third.type
-      && first.type != third.type) {
+      possibleColors = ["scarlet", "ruby", "crimson", "blood-colored", "rusty", "garnet", "red", "rose", "vermillion"];
+      averageRarity += 2;
+    } else if (a.type != b.type
+      && b.type != c.type
+      && a.type != c.type) {
       // all different
-      return new Wine(-100, -100, 10, 10, "blue");
+      possibleColors = ["violet", "blue", "aquamarine", "sapphire", "opalescent", "cobalt", "indigo", "inky"];
+      averageRarity += 3;
     } else {
       // two and one
-      return new Wine(-100, -100, 10, 10, "green");
+      possibleColors = ["apple green", "green", "verdant", "teal", "turquoise", "emerald", "jade", "chartreuse"]
     }
+    color = possibleColors[randBetween(this.rng, 0, possibleColors.length)];
+
+    //determine rarity text
+    let rarity = null;
+    if (averageRarity < 3) {
+      rarity = "pedestrian";
+    } else if (averageRarity < 8) {
+      rarity = "common";
+    } else if (averageRarity < 12) {
+      rarity = "unusual";
+    } else if (averageRarity < 14) {
+      rarity = "rare";
+    } else if (averageRarity < 16) {
+      rarity = "quite rare";
+    } else if (averageRarity < 18) {
+      rarity = "prized";
+    } else {
+      rarity = "extremely rare";
+    }
+
+    //build description
+    let possibleDescriptions =
+      [ "A # & wine with # characteristics and a # nose. $."
+      , "The color is &, and the wine is # and #, very # on the palate. A $ wine, indeed."
+      , "Balanced #, #, with a touch of # on the palate. A rich & hue; $."
+      , "Sweetly #, with an unusual # and ripe #. The & indicated a good aging wine; $."
+      , "Pure &, tastes # and #. The heady # notes improve this $ wine."
+      , "This $ wine is full of # and #, with a long, #-filled finish. A striking & color."
+      , "Concentrated # and a bright & color in the glass. The # and # enhance this $ wine."
+      , "A classic & wine, bursting with #, #, and # flavor. $."
+      , "A strong # wine, with a soft & color. Flavors # and # in this $ wine."
+      , "A hint of springtime # in this sprightly, & wine. Delicious # and #. $."
+      ],
+      descs = [a.description, b.description, c.description];
+    let description = possibleDescriptions[randBetween(this.rng, 0, possibleDescriptions.length)];
+    for (var i = 0; i < 3; i++) {
+      description = description.replace("#", descs.pop());
+    }
+    description = description.replace("&", color);
+    description = description.replace("$", rarity);
+    console.log(description);
+    return new Wine(-100, -100, 10, 10, "wine", averageRarity, description);
   }
+
   action() {
     if (player.holding === null && this.wine !== null) {
       console.log("Picking up wine!");
@@ -251,7 +342,7 @@ class LaunchThruster {
     this.width = width;
     this.height = height;
     this.sprite = fuel;
-    this.fuel = 3;
+    this.fuel = 0; // 3
   }
 
   draw() {
@@ -266,7 +357,7 @@ class LaunchThruster {
     if (player.holding === null && this.fuel > 0 && currentState.space_state) {
       console.log("Launch!");
       this.fuel -= 1;
-      transitionToState(currentState.space_state);
+      //transitionToState(currentState.space_state); //RL DEBUG
     } else if (player.holding !== null && this.fuel < 3) {
       console.log("Refuel!");
       this.fuel += 1;
@@ -276,18 +367,59 @@ class LaunchThruster {
       }
       player.holding = null;
     } else if (player.holding === null && this.fuel == 0) {
-      var textNode = document.createTextNode("Going to have to refuel to get there. Go stuff a fruit in the fuel tanks.")
-      displayInfoText(textNode);
+      message = "Going to have to refuel to get there. Go stuff a fruit in the fuel tanks.";
+      message_display_frames_remaining = 150;
     }
   }
 }
 
-function displayInfoText(s) {
-  document.querySelector("#text_display_box").style.display = "inline";
-  document.querySelector("#text_display").appendChild(s);
-  document.querySelector("#text_box_button").onclick = function (e) {
-    document.querySelector("#text_display").innerHTML = "";
-    document.querySelector("#text_display_box").style.display = "none";
+class Splash {
+  constructor(){
+    this.rng = new Math.seedrandom("HiThereWineLover");
+    this.bg = [];
+    for (var row = 0; row < canvas.height/T; row++) {
+      let y = row * 64;
+      for (var col = 0; col < canvas.width/T; col++) {
+        let x = col * 64;
+        let argx = 0;
+        if (this.rng() < 0.8) {
+          argx = Math.floor(this.rng() * 12) * 64;
+        }
+        this.bg.push([argx, x, y]);
+      }
+    }
+  }
+
+  update() {
+
+  }
+
+  draw() {
+    for (var img = 0; img < this.bg.length; img++) {
+      ctx.drawImage(space_bg_tiles, this.bg[img][0], 0, T, T, this.bg[img][1], this.bg[img][2], T, T);
+    }
+    ctx.drawImage(splash, canvas.width/2 - 300, canvas.height/2 - 250);
+  }
+
+  getShipStuff() {
+    let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
+    let wine_maker = new WineMaker(40, 50, 55, 25);
+    return [player, launch_thruster, wine_maker];
+  }
+
+  action() {
+    if (!naming_mode) {
+      naming_mode = true;
+      document.querySelector("#player_naming_box").style.display = "inline";
+      var that = this;
+      document.querySelector("#player_naming_button").onclick = function (e) {
+        playerName = document.querySelector("#player").value;
+        document.querySelector("#player_naming_box").style.display = "none";
+        naming_mode = false;
+        var space = new Space(playerName, 0);
+        transitionToState(space);
+      }
+    }
   }
 }
 
@@ -345,56 +477,6 @@ class FloatingPlanet {
   }
 
 
-}
-
-class Splash {
-  constructor(){
-    this.rng = new Math.seedrandom("HiThereWineLover");
-    this.bg = [];
-    for (var row = 0; row < canvas.height/T; row++) {
-      let y = row * 64;
-      for (var col = 0; col < canvas.width/T; col++) {
-        let x = col * 64;
-        let argx = 0;
-        if (this.rng() < 0.8) {
-          argx = Math.floor(this.rng() * 12) * 64;
-        }
-        this.bg.push([argx, x, y]);
-      }
-    }
-  }
-
-  update() {
-
-  }
-
-  draw() {
-    for (var img = 0; img < this.bg.length; img++) {
-      ctx.drawImage(space_bg_tiles, this.bg[img][0], 0, T, T, this.bg[img][1], this.bg[img][2], T, T);
-    }
-    ctx.drawImage(splash, canvas.width/2 - 300, canvas.height/2 - 250);
-  }
-
-  getShipStuff() {
-    let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
-    let wine_maker = new WineMaker(40, 50, 55, 25);
-    return [player, launch_thruster, wine_maker];
-  }
-
-  action() {
-    if (!naming_mode) {
-      naming_mode = true;
-      document.querySelector("#player_naming_box").style.display = "inline";
-      var that = this;
-      document.querySelector("#player_naming_button").onclick = function (e) {
-        playerName = document.querySelector("#player").value;
-        document.querySelector("#player_naming_box").style.display = "none";
-        naming_mode = false;
-        var space = new Space(playerName, 0);
-        transitionToState(space);
-      }
-    }
-  }
 }
 
 class Space {
@@ -534,6 +616,521 @@ class Space {
   }
 }
 
+class Underworld {
+  constructor(overworld, rng) { //maybe some ctx translation info??
+    this.overworld = overworld;
+    this.rng = rng;
+    this.ground = "rgb(0,0,0)"; //TODO inherit planet ground color; darken it up
+    this.terrain = terrain_sheet1;
+    this.stuff = [];
+    this.world =
+      { width: 3 * canvas.width
+      , height: 3 * canvas.height
+      }
+    this.viewport =
+      { x: canvas.width
+      , y: canvas.height
+      };
+    this.typeMap = makeTypeMap(this.world, this.rng);
+    this.viewMap = makeViewMap(this.world, this.typeMap);
+    for (var i = 0; i < randBetween(this.rng, 2, 8); i += 1) {
+      this.stuff.push(new StaticInteractable
+        ( randBetween(this.rng, 0, this.world.width)
+        , randBetween(this.rng, 0, this.world.height)
+        , 64
+        , 64
+        , stairs
+        , randBetween(this.rng, 0, 4) * 64
+        , "stair"
+        , "A way up!"
+        )
+      )
+    }
+  }
+
+  update() {
+    // terrain collisions TODO
+    for (var i = 0; i < this.stairs; i++) {
+      if (colCheck(player, i)) {
+        console.warn("GOING UP")
+      }
+    }
+
+    if (keys[39] || keys[68]) {
+      if (player.velX < player.speed) {
+        player.velX++;
+      }
+    }
+    if (keys[37] || keys[65]) {
+      if (player.velX > -player.speed) {
+        player.velX--;
+      }
+    }
+    if (keys[38] || keys[87]) {
+      if (player.velY > -player.speed) {
+        player.velY--;
+      }
+    }
+    if (keys[40] || keys[83]) {
+      if (player.velY < player.speed) {
+        player.velY++;
+      }
+    }
+    if (player.holding !== null) {
+      player.holding.move();
+    }
+    player.velX *= 0.8; //friction
+    player.velY *= 0.8; //friction
+
+    player.x += player.velX;
+    player.y += player.velY;
+
+    var new_viewport_x;
+    var new_viewport_y;
+    if (player.x < this.viewport.x + canvas.width / 3.0) {
+      new_viewport_x = player.x - canvas.width / 3.0;
+    }
+    if (player.x > this.viewport.x + canvas.width * 2.0 / 3.0) {
+      new_viewport_x = player.x - canvas.width * 2.0 / 3.0;
+    }
+    if (player.y < this.viewport.y + canvas.height / 3.0) {
+      new_viewport_y = player.y - canvas.height / 3.0;
+    }
+    if (player.y > this.viewport.y + canvas.height * 2.0 / 3.0) {
+      new_viewport_y = player.y - canvas.height * 2.0 / 3.0
+    }
+    if (new_viewport_x > 0 && new_viewport_x < this.world.width - canvas.width) {
+      this.viewport.x = new_viewport_x;
+    }
+    if (new_viewport_y > 0 && new_viewport_y < this.world.height - canvas.height) {
+      this.viewport.y = new_viewport_y;
+    }
+  }
+
+  draw() {
+    // draw background
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = this.ground;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(-1 * this.viewport.x, -1 * this.viewport.y);
+
+    // draw terrain TODO
+    for (var row = 0; row < this.world.height/T; row++) {
+      for (var col = 0; col < this.world.width/T; col++) {
+        if (this.viewMap[row][col] == 'flat') {
+          // ctx.drawImage(terrain_floor, col*T, row*T);
+        } else if (typeof this.viewMap[row][col] == 'number') {
+          // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
+          let spritesheet_index = this.viewMap[row][col];
+          ctx.drawImage(terrain_holes, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
+        } else {
+          // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
+          let row_in_sheet = this.viewMap[row][col].row;
+          let col_in_sheet = this.viewMap[row][col].col;
+          // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
+          ctx.drawImage(this.terrain, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
+        }
+      }
+    }
+    // draw stuff
+    for (var i = 0; i < this.stuff.length; i++) {
+      this.stuff[i].draw();
+    }
+    // make sure to draw the thing the player is holding after the player,
+    // so that it overlaps
+    if (player.holding) {
+      player.holding.draw();
+    }
+    ctx.restore();
+
+  }
+
+  action() {
+    var found = [];
+    for (var i = 0; i < this.stuff.length; i++) {
+      if (this.stuff[i] === player) {
+        // player can't action itself, silly!
+      } else if (this.stuff[i] === player.holding) {
+        // de-prioritize this, so we can load things
+      } else if (colCheck(player, this.stuff[i])) {
+        found.push(i);
+      }
+    }
+    if (found.length == 1) {
+      this.stuff[found[0]].action();
+    } else if (found.length > 0) {
+      this.stuff[found[found.length -1]].action();
+    } else if (player.holding) {
+      // only if there is no other thing to do
+      player.holding.action();
+    }
+  }
+
+  addPlayer(player) {
+    this.stuff.push(player);
+  }
+
+  addIngredient(ingredient) {
+    this.stuff.push(ingredient);
+  }
+
+  removeIngredient(ingredient) {
+    var index = this.stuff.indexOf(ingredient);
+    if (index > -1) {
+      this.stuff.splice(index, 1)
+    }
+  }
+
+  transferUp() {
+    this.overworld.addPlayer(player);
+    var index = this.stuff.indexOf(player);
+    if (index > -1) {
+      this.stuff.splice(index, 1);
+    }
+    if (player.holding !== null) {
+      this.removeIngredient(player.holding);
+      this.overworld.addIngredient(player.holding);
+    }
+    currentState = this.overworld;
+
+  }
+}
+
+class Planet {
+  constructor(seed_string, space_state) {
+    this.seed_string = seed_string;
+    this.space_state = space_state;
+    this.rng = new Math.seedrandom(this.seed_string);
+    let terrains = [terrain_sheet1, terrain_sheet2, terrain_sheet3];
+    this.terrain = terrains[randBetween(this.rng, 0, terrains.length)];
+    this.ground = generateColor(this.rng);
+    this.world =
+      { width: 3 * canvas.width
+      , height: 3 * canvas.height
+      }
+    this.typeMap = makeTypeMapHoles(this.world, this.rng);
+    this.viewMap = makeViewMap(this.world, this.typeMap);
+    this.viewport =
+      { x: canvas.width
+      , y: canvas.height
+      };
+    this.ship = {
+      x: canvas.width * 1.5,
+      y: canvas.height * 1.5
+    }
+    this.underworld = new Underworld(this, this.rng, this.ground);
+    // we scatter random ingredients over the world
+    this.common_ingredient_image = this.fruitImage(this.rng);
+    this.common_ingredient_type = randBetween(this.rng, 2, 4);
+    this.common_ingredient_desc =
+      descs[this.common_ingredient_type][randBetween(this.rng, 0, descs[this.common_ingredient_type].length)];
+
+    this.rare_ingredient_image = this.fruitImage(this.rng);
+    this.rare_ingredient_type = randBetween(this.rng, 0, 5);
+    this.rare_ingredient_desc =
+      descs[this.rare_ingredient_type][randBetween(this.rng, 0, descs[this.rare_ingredient_type].length)];
+
+    this.stuff = [];
+    for (var i = 0; i < randBetween(this.rng, 16, 20); i += 1) {
+      this.stuff.push(new Ingredient(
+        randBetween(this.rng, 0, this.world.width),
+        randBetween(this.rng, 0, this.world.height),
+        10,
+        10,
+        this.common_ingredient_image,
+        this.common_ingredient_type,
+        this.common_ingredient_type,
+        this.common_ingredient_desc
+      ));
+    }
+    for (var i = 0; i < randBetween(this.rng, 2, 8); i += 1) {
+      this.stuff.push(new Ingredient(
+        randBetween(this.rng, 0, this.world.width),
+        randBetween(this.rng, 0, this.world.height),
+        10,
+        10,
+        this.rare_ingredient_image,
+        this.rare_ingredient_type,
+        randBetween(this.rng, 2, 8),
+        this.rare_ingredient_desc
+      ));
+    }
+  }
+  fruitImage(rng) {
+    let fruitsvg = mySVG.cloneNode(true);
+    let layer_1 = null;
+    let layer_2 = null;
+    if (rng() < 0.5) {
+      layer_1 = fruitsvg.querySelector("#f1_b");
+      layer_2 = fruitsvg.querySelector("#f1_" + randBetween(rng, 0, 3));
+    } else {
+      layer_1 = fruitsvg.querySelector("#f2_b");
+      layer_2 = fruitsvg.querySelector("#f2_" + randBetween(rng, 0, 5));
+    }
+
+    layer_1.querySelector("path").style.fill = generateColor(this.rng);
+
+    let layer_2Paths = layer_2.querySelectorAll("path");
+    let layer_2PC = generateColor(this.rng);
+    for (var i = 0; i < layer_2Paths.length; i++) {
+      layer_2Paths[i].style.fill = layer_2PC;
+    }
+
+    layer_1.style.display = "inline";
+    layer_2.style.display = "inline";
+
+
+    var wrap = document.createElement("div");
+    wrap.appendChild(fruitsvg);
+    var image = new Image();
+    image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
+    return image;
+  }
+
+  collideWithMap(to_test) {
+    let collision_type = "flat";
+    let collision_area = 0;
+    let collision_row = null;
+    let collision_col = null;
+    for (var row = 0; row < this.world.height/T; row++) {
+      for (var col = 0; col < this.world.width/T; col++) {
+        if (this.typeMap[row][col] == "flat") {
+          // no collision
+        } else {
+          let area = colArea(to_test, {x: col*T, y: row*T, width: T, height: T});
+          if (area > collision_area) {
+            collision_type = this.typeMap[row][col];
+            area = collision_area;
+            collision_row = row;
+            collision_col = col;
+          }
+        }
+      }
+    }
+    return collision_type;
+  }
+
+  update() {
+    if (keys[39] || keys[68]) {
+      if (player.velX < player.speed) {
+        player.velX++;
+      }
+    }
+    if (keys[37] || keys[65]) {
+      if (player.velX > -player.speed) {
+        player.velX--;
+      }
+    }
+    if (keys[38] || keys[87]) {
+      if (player.velY > -player.speed) {
+        player.velY--;
+      }
+    }
+    if (keys[40] || keys[83]) {
+      if (player.velY < player.speed) {
+        player.velY++;
+      }
+    }
+    if (player.holding !== null) {
+      player.holding.move();
+    }
+    player.velX *= 0.8; //friction
+    player.velY *= 0.8; //friction
+
+    player.x += player.velX;
+    player.y += player.velY;
+
+    var new_viewport_x;
+    var new_viewport_y;
+    if (player.x < this.viewport.x + canvas.width / 3.0) {
+      new_viewport_x = player.x - canvas.width / 3.0;
+    }
+    if (player.x > this.viewport.x + canvas.width * 2.0 / 3.0) {
+      new_viewport_x = player.x - canvas.width * 2.0 / 3.0;
+    }
+    if (player.y < this.viewport.y + canvas.height / 3.0) {
+      new_viewport_y = player.y - canvas.height / 3.0;
+    }
+    if (player.y > this.viewport.y + canvas.height * 2.0 / 3.0) {
+      new_viewport_y = player.y - canvas.height * 2.0 / 3.0
+    }
+    if (new_viewport_x > 0 && new_viewport_x < this.world.width - canvas.width) {
+      this.viewport.x = new_viewport_x;
+    }
+    if (new_viewport_y > 0 && new_viewport_y < this.world.height - canvas.height) {
+      this.viewport.y = new_viewport_y;
+    }
+
+    // terrain collisions TODO
+    let collision_type = this.collideWithMap(player);
+    if (collision_type == "hole") {
+      console.warn("FALLING THROUGH")
+      this.transferDown();
+      return
+    } else if (collision_type != "flat") {
+      // player's in a rock, let's scoot the player =P
+      console.log("player's in a rock, let's scoot the player =P");
+      let xs = [
+        Math.floor(player.x / T) * T, player.x, Math.ceil(player.x / T) * T,
+        Math.floor((player.x + player.width) / T) * T - player.width, Math.ceil((player.x + player.width) / T) * T - player.width
+      ];
+      let ys = [
+        Math.floor(player.y / T) * T, player.y, Math.ceil(player.y / T) * T,
+        Math.floor((player.y + player.height) / T) * T - player.height, Math.ceil((player.y + player.height) / T) * T - player.height
+      ];
+      let bestDist = Infinity;
+      let best = null;
+      for (var i = 0; i < xs.length; i++) {
+        let candidate_x = xs[i];
+        for (var j = 0; j < ys.length; j++) {
+          let candidate_y = ys[j];
+          let candidate = {x: candidate_x, y: candidate_y, width: 468/6, height: 100};
+          if (this.collideWithMap(candidate) == "flat") {
+            let d = dist(player, candidate);
+            if (d < bestDist) {
+              best = candidate;
+              bestDist = d;
+            }
+          }
+        }
+      }
+      if (best) {
+        player.x = best.x;
+        player.y = best.y;
+      }
+    }
+  }
+
+  draw() {
+    // draw background
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = this.ground;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(-1 * this.viewport.x, -1 * this.viewport.y);
+
+
+    // draw terrain
+    for (var row = 0; row < this.world.height/T; row++) {
+      for (var col = 0; col < this.world.width/T; col++) {
+        if (this.viewMap[row][col] == 'hole') {
+          ctx.drawImage(terrain_hole, col*T, row*T)
+        } else if (this.viewMap[row][col] == 'flat') {
+          // debug visualize the flat squares
+          // ctx.beginPath();
+          // ctx.rect(col*T + 2, row*T + 2, T - 4, T - 4);
+          // ctx.strokeStyle = "blue";
+          // ctx.stroke();
+        } else if (typeof this.viewMap[row][col] == 'number') {
+          // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
+          let spritesheet_index = this.viewMap[row][col];
+          ctx.drawImage(terrain_holes, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
+        } else {
+          // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
+          let row_in_sheet = this.viewMap[row][col].row;
+          let col_in_sheet = this.viewMap[row][col].col;
+          // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
+          ctx.drawImage(this.terrain, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
+        }
+      }
+    }
+    ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
+    // draw stuff
+    for (var i = 0; i < this.stuff.length; i++) {
+      this.stuff[i].draw();
+    }
+    // make sure to draw the thing the player is holding after the player,
+    // so that it overlaps
+    if (player.holding) {
+      player.holding.draw();
+    }
+    ctx.restore();
+  }
+
+  action() {
+    var found = [];
+    for (var i = 0; i < this.stuff.length; i++) {
+      if (this.stuff[i] === player) {
+        // player can't action itself, silly!
+      } else if (this.stuff[i] === player.holding) {
+        // de-prioritize this, so we can load things
+      } else if (colCheck(player, this.stuff[i])) {
+        found.push(i);
+      }
+    }
+    if (found.length == 1) {
+      this.stuff[found[0]].action();
+    } else if (found.length > 0) {
+      this.stuff[found[found.length -1]].action();
+    } else if (player.holding) {
+      // only if there is no other thing to do
+      player.holding.action();
+    }
+  }
+  getShipStuff() {
+    var accumulator = [];
+    for (var i = 0; i < this.stuff.length; i++) {
+      // TODO(johnicholas): move the ship radius up and out
+      if (colCheck(this.stuff[i], {x: this.ship.x - 68, y: this.ship.y, width: 136, height: 52}) || pointInEllipse(this.stuff[i], this.ship)) {
+        // we need to convert to ship-relative coordinates
+        this.stuff[i].x -= this.ship.x;
+        this.stuff[i].y -= this.ship.y;
+        accumulator.push(this.stuff[i]);
+      }
+    }
+    // remove all and only the things that are leaving
+    for (var j = 0; j < accumulator.length; j++) {
+      var index = this.stuff.indexOf(accumulator[j]);
+      if (index > -1) {
+        this.stuff.splice(index, 1);
+      }
+    }
+    return accumulator;
+  }
+  addShipStuff(stuff_to_add) {
+    for (var i = 0; i < stuff_to_add.length; i++) {
+      // we need to convert from ship-relative coordinates
+      stuff_to_add[i].x += this.ship.x;
+      stuff_to_add[i].y += this.ship.y;
+      this.stuff.push(stuff_to_add[i]);
+    }
+  }
+
+  addPlayer(player) {
+    this.stuff.push(player);
+  }
+
+  addIngredient(ingredient) {
+    this.stuff.push(ingredient);
+  }
+
+  removeIngredient(ingredient) {
+    var index = this.stuff.indexOf(ingredient);
+    if (index > -1) {
+      this.stuff.splice(index, 1)
+    }
+  }
+
+  transferDown() {
+    this.underworld.addPlayer(player);
+    var index = this.stuff.indexOf(player);
+    if (index > -1) {
+      this.stuff.splice(index, 1);
+    }
+    if (player.holding !== null) {
+      this.removeIngredient(player.holding);
+      this.underworld.addIngredient(player.holding);
+    }
+    currentState = this.underworld;
+  }
+
+}
+
 class Shelf {
   constructor(x, y, w, h, i) {
     this.x = x;
@@ -609,6 +1206,7 @@ class Shelf {
     }
   }
 }
+
 class WineCellar {
   constructor(username, systems_seen) {
     this.ship = {x: 866, y: 378};
@@ -765,243 +1363,13 @@ let descs = [
   ['sweet', 'pungent', 'sour', 'tangy', 'strong'],
 ]
 
-class Planet {
-  constructor(seed_string, space_state) {
-    this.seed_string = seed_string;
-    this.space_state = space_state;
-    this.rng = new Math.seedrandom(this.seed_string);
-    let terrains = [terrain_sheet1, terrain_sheet2, terrain_sheet3];
-    this.terrain = terrains[randBetween(this.rng, 0, terrains.length)];
-    this.ground = generateColor(this.rng);
-    this.world =
-      { width: 3 * canvas.width
-      , height: 3 * canvas.height
-      }
-    this.typeMap = makeTypeMap(this.world, this.rng);
-    this.viewMap = makeViewMap(this.world, this.typeMap);
-    this.viewport =
-      { x: canvas.width
-      , y: canvas.height
-      };
-    this.ship = {
-      x: canvas.width * 1.5,
-      y: canvas.height * 1.5
-    }
-    // we scatter random ingredients over the world
-    this.common_ingredient_image = this.fruitImage(this.rng);
-    this.common_ingredient_type = randBetween(this.rng, 2, 4);
-    this.common_ingredient_desc =
-      descs[this.common_ingredient_type][randBetween(this.rng, 0, descs[this.common_ingredient_type].length)];
-
-    this.rare_ingredient_image = this.fruitImage(this.rng);
-    this.rare_ingredient_type = randBetween(this.rng, 0, 5);
-    this.rare_ingredient_desc =
-      descs[this.rare_ingredient_type][randBetween(this.rng, 0, descs[this.rare_ingredient_type].length)];
-
-    this.stuff = [];
-    for (var i = 0; i < randBetween(this.rng, 16, 20); i += 1) {
-      this.stuff.push(new Ingredient(
-        randBetween(this.rng, 0, this.world.width),
-        randBetween(this.rng, 0, this.world.height),
-        10,
-        10,
-        this.common_ingredient_image,
-        this.common_ingredient_desc
-      ));
-    }
-    for (var i = 0; i < randBetween(this.rng, 2, 8); i += 1) {
-      this.stuff.push(new Ingredient(
-        randBetween(this.rng, 0, this.world.width),
-        randBetween(this.rng, 0, this.world.height),
-        10,
-        10,
-        this.rare_ingredient_image,
-        this.rare_ingredient_desc
-      ));
-    }
+function displayInfoText(s) {
+  document.querySelector("#text_display_box").style.display = "inline";
+  document.querySelector("#text_display").appendChild(s);
+  document.querySelector("#text_box_button").onclick = function (e) {
+    document.querySelector("#text_display").innerHTML = "";
+    document.querySelector("#text_display_box").style.display = "none";
   }
-  fruitImage(rng) {
-    let fruitsvg = mySVG.cloneNode(true);
-    let layer_1 = null;
-    let layer_2 = null;
-    if (rng() < 0.5) {
-      layer_1 = fruitsvg.querySelector("#f1_b");
-      layer_2 = fruitsvg.querySelector("#f1_" + randBetween(rng, 0, 3));
-    } else {
-      layer_1 = fruitsvg.querySelector("#f2_b");
-      layer_2 = fruitsvg.querySelector("#f2_" + randBetween(rng, 0, 5));
-    }
-
-    layer_1.querySelector("path").style.fill = generateColor(this.rng);
-
-    let layer_2Paths = layer_2.querySelectorAll("path");
-    let layer_2PC = generateColor(this.rng);
-    for (var i = 0; i < layer_2Paths.length; i++) {
-      layer_2Paths[i].style.fill = layer_2PC;
-    }
-
-    layer_1.style.display = "inline";
-    layer_2.style.display = "inline";
-
-
-    var wrap = document.createElement("div");
-    wrap.appendChild(fruitsvg);
-    var image = new Image();
-    image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
-    return image;
-  }
-
-  update() {
-    if (keys[39] || keys[68]) {
-      if (player.velX < player.speed) {
-        player.velX++;
-      }
-    }
-    if (keys[37] || keys[65]) {
-      if (player.velX > -player.speed) {
-        player.velX--;
-      }
-    }
-    if (keys[38] || keys[87]) {
-      if (player.velY > -player.speed) {
-        player.velY--;
-      }
-    }
-    if (keys[40] || keys[83]) {
-      if (player.velY < player.speed) {
-        player.velY++;
-      }
-    }
-    if (player.holding !== null) {
-      player.holding.move();
-    }
-    player.velX *= 0.8; //friction
-    player.velY *= 0.8; //friction
-
-    player.x += player.velX;
-    player.y += player.velY;
-
-    var new_viewport_x;
-    var new_viewport_y;
-    if (player.x < this.viewport.x + canvas.width / 3.0) {
-      new_viewport_x = player.x - canvas.width / 3.0;
-    }
-    if (player.x > this.viewport.x + canvas.width * 2.0 / 3.0) {
-      new_viewport_x = player.x - canvas.width * 2.0 / 3.0;
-    }
-    if (player.y < this.viewport.y + canvas.height / 3.0) {
-      new_viewport_y = player.y - canvas.height / 3.0;
-    }
-    if (player.y > this.viewport.y + canvas.height * 2.0 / 3.0) {
-      new_viewport_y = player.y - canvas.height * 2.0 / 3.0
-    }
-    if (new_viewport_x > 0 && new_viewport_x < this.world.width - canvas.width) {
-      this.viewport.x = new_viewport_x;
-    }
-    if (new_viewport_y > 0 && new_viewport_y < this.world.height - canvas.height) {
-      this.viewport.y = new_viewport_y;
-    }
-  }
-
-  draw() {
-    // draw background
-    ctx.beginPath();
-    ctx.rect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = this.ground;
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(-1 * this.viewport.x, -1 * this.viewport.y);
-
-
-    // draw terrain
-    // TODO(johnicholas): draw less, not all this can be seen
-    for (var row = 0; row < this.world.height/T; row++) {
-      for (var col = 0; col < this.world.width/T; col++) {
-        if (this.viewMap[row][col] == 'hole') {
-          ctx.drawImage(terrain_hole, col*T, row*T)
-        } else if (this.viewMap[row][col] == 'ceiling') {
-          ctx.drawImage(terrain_ceiling, col*T, row*T)
-        } else if (this.viewMap[row][col] == 'wall') {
-          // TODO(johnicholas): add an image to draw a wall
-          ctx.drawImage(terrain_ceiling, col*T, row*T)
-        } else if (this.viewMap[row][col] == 'floor') {
-          // ctx.drawImage(terrain_floor, col*T, row*T);
-        } else if (typeof this.viewMap[row][col] == 'number') {
-          // viewMap[row][col] is a number, pointing to a location in terrain_sheet1.
-          let spritesheet_index = this.viewMap[row][col];
-          ctx.drawImage(terrain_holes, spritesheet_index*T, 0, T, T, col*T, row*T, T, T);
-        } else {
-          // viewMap[row][col] is a pair of numbers, pointing to a location in terrain_sheet2.
-          let row_in_sheet = this.viewMap[row][col].row;
-          let col_in_sheet = this.viewMap[row][col].col;
-          // ctx.drawImage(template_terrain_sheet, col_in_sheet*32, row_in_sheet*32, 32, 32, col*T, row*T, T, T);
-          ctx.drawImage(this.terrain, col_in_sheet*T, row_in_sheet*T, T, T, col*T, row*T, T, T);
-        }
-      }
-    }
-    ctx.drawImage(shipimage, this.ship.x - 150, this.ship.y - 200);
-    // draw stuff
-    for (var i = 0; i < this.stuff.length; i++) {
-      this.stuff[i].draw();
-    }
-    // make sure to draw the thing the player is holding after the player,
-    // so that it overlaps
-    if (player.holding) {
-      player.holding.draw();
-    }
-    ctx.restore();
-  }
-
-  action() {
-    var found = [];
-    for (var i = 0; i < this.stuff.length; i++) {
-      if (this.stuff[i] === player) {
-        // player can't action itself, silly!
-      } else if (this.stuff[i] === player.holding) {
-        // de-prioritize this, so we can load things
-      } else if (colCheck(player, this.stuff[i])) {
-        found.push(i);
-      }
-    }
-    if (found.length == 1) {
-      this.stuff[found[0]].action();
-    } else if (found.length > 0) {
-      this.stuff[found[found.length -1]].action();
-    } else if (player.holding) {
-      // only if there is no other thing to do
-      player.holding.action();
-    }
-  }
-  getShipStuff() {
-    var accumulator = [];
-    for (var i = 0; i < this.stuff.length; i++) {
-      // TODO(johnicholas): move the ship radius up and out
-      if (colCheck(this.stuff[i], {x: this.ship.x - 68, y: this.ship.y, width: 136, height: 52}) || pointInEllipse(this.stuff[i], this.ship)) {
-        // we need to convert to ship-relative coordinates
-        this.stuff[i].x -= this.ship.x;
-        this.stuff[i].y -= this.ship.y;
-        accumulator.push(this.stuff[i]);
-      }
-    }
-    // remove all and only the things that are leaving
-    for (var j = 0; j < accumulator.length; j++) {
-      var index = this.stuff.indexOf(accumulator[j]);
-      if (index > -1) {
-        this.stuff.splice(index, 1);
-      }
-    }
-    return accumulator;
-  }
-  addShipStuff(stuff_to_add) {
-    for (var i = 0; i < stuff_to_add.length; i++) {
-      // we need to convert from ship-relative coordinates
-      stuff_to_add[i].x += this.ship.x;
-      stuff_to_add[i].y += this.ship.y;
-      this.stuff.push(stuff_to_add[i]);
-    }
-  }
-
 }
 
 // GLOBALS GLOBALS GLOBALS
@@ -1011,7 +1379,7 @@ var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
-let currentState = new Splash();
+let currentState = new Planet("SnooSnoo", null); //RL DEBUG new Splash();
 let keys = [];
 
 let player = {
@@ -1026,6 +1394,10 @@ let player = {
   sprite: player_static
 }
 let player_frame = 0;
+
+let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
+let wine_maker = new WineMaker(40, 50, 55, 25);
+currentState.addShipStuff([player, launch_thruster, wine_maker]);
 
 player.draw = function () { //TODO needs global player_frame
   var xarg = 0;
@@ -1043,13 +1415,13 @@ player.draw = function () { //TODO needs global player_frame
 
   ctx.drawImage(player.sprite, argx, 0, player.width, player.height, player.x, player.y, player.width, player.height);
   // debug visualization
-  //ctx.beginPath();
-  //ctx.rect(this.x, this.y, this.width, this.height);
+  ctx.beginPath();
+  ctx.rect(this.x, this.y, this.width, this.height);
   //if (colCheck(this, {x: currentState.ship.x - 68*1.5, y: currentState.ship.y, width: 68*1.5*2, height: 55*1.5}) || pointInEllipse(this, currentState.ship)) {
   //  ctx.fillStyle = "red";
   //} else {
-  //ctx.strokeStyle = "red";
-  //ctx.stroke();
+  ctx.strokeStyle = "red";
+  ctx.stroke();
 };
 
 let naming_mode = false;
@@ -1064,7 +1436,32 @@ let shipimage = null;
   shipimage = new Image();
   shipimage.src = "data:image/svg+xml;base64," + window.btoa(shipwrap.innerHTML);
 }());
+let message = "hello world";
+let message_display_frames_remaining = 150;
 // END GLOBALS GLOBALS GLOBALS
+
+function makeToast(newToast) { // AM I HAVING A STROKE!?
+  message = newToast;
+  message_display_frames_remaining = 150;
+}
+
+function drawToast() {
+  if (message_display_frames_remaining > 0) {
+    if (message_display_frames_remaining > 50) {
+      ctx.fillStyle = "black";
+      ctx.fillRect(canvas.width * 0.8, canvas.height * 0.9, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      ctx.fillText(message, canvas.width * 0.85, canvas.height * 0.95)
+    } else {
+      var f = message_display_frames_remaining / 50;
+      ctx.fillStyle = "rgba(0, 0, 0, " + f + ")";
+      ctx.fillRect(canvas.width * 0.8, canvas.height * 0.9, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255, 255, 255, " + f + ")";
+      ctx.fillText(message, canvas.width * 0.85, canvas.height * 0.95)
+    }
+    message_display_frames_remaining--;
+  }
+}
 
 function transitionToState(destinationState) {
   destinationState.addShipStuff(currentState.getShipStuff())
@@ -1081,6 +1478,7 @@ function frame() {
     currentState.draw();
   }
   ctx.drawImage(help_icon, canvas.width-20, 0);
+  drawToast();
   requestAnimationFrame(frame);
 }
 
