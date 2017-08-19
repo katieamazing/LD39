@@ -1,31 +1,17 @@
 # LD39
 ![artttsss](https://raw.githubusercontent.com/katieamazing/LD39/master/imgs/just_for_showoffs.jpg)
 
+**Sip Sip Universe** is a procedurally-generated astro-exploring ode to wine and the games that inspired us (Nom Nom Galaxy, The Sims winemaking, No Man's Sky). It features colorful planets to explore, a rainbow of fruits to make into wines, and a Winecellar Between the Worlds where you can stow your most prized bottles, and where others can come to admire your fanciful wines.
 
-*Art*
-* [ ] terrain art (static)
-* [X] terrain art (slightly procedurally generated)
-* [X] Space art (procedurally generated)
-* [ ] character art
-* [X] ship art
-* [ ] static sprites (ingredients, fuel)
-* [ ] background/splash
-* [ ] UI
+Sip Sip Universe was made in 72 hours for the Ludum Dare 39 Compo. 
 
-*Sound*
-* [ ] put together some tracks for bg music, sing wine tasting notes!?
-* [ ] make cute sfx
-
-*Code*
-* [ ] Get the backend working properly, with some data validation
-* [X] Generative maps with the spritesheet for tiles
-* [ ] Collision working on the maps
-* [X] Slick text input
-* [ ] Uh... the rest of the game
-
-*Misc*
-* [ ] A real good tutorial/intro thing
-
-*Wishlist*
-* [ ] Enemies and a combat system
-* [ ] Destructable terrain
+Post-Jam List:
+* [ ] Add roguelike elements
+* [ ] Enemies
+* [ ] Combat
+* [ ] More fruits, more terrains
+* [ ] Ship selector
+* [ ] Character selector
+* [ ] Music
+* [ ] Currency system
+* [ ] General cleanup (fuel, winemaking is messy and could be improved)
