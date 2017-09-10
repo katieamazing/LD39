@@ -72,7 +72,6 @@ class Ingredient {
     this.type = type;
     this.rarity = rarity;
     this.description = description;
-    this.sfx = new sound("audio/place_item.wav");
   }
 
   draw() {
@@ -86,11 +85,11 @@ class Ingredient {
   action() {
     if (player.holding == null) {
       player.holding = this;
-      this.sfx.play();
+      sounds.place_item.play();
       makeToast(this.description);
     } else if (player.holding == this) {
       player.holding = null;
-      this.sfx.play();
+      sounds.place_item.play();
     }
   }
 
@@ -103,7 +102,7 @@ class Ingredient {
 // Wine acts just like any other ingredient?
 // Except maybe it is drawn differently?
 class Wine {
-  constructor (x, y, width, height, type, rarity, description) {
+  constructor(x, y, width, height, type, rarity, description) {
     this.x = x;
     this.y = y;
     this.width = 20;
@@ -111,7 +110,6 @@ class Wine {
     this.type = 4;
     this.rarity = rarity;
     this.description = description
-    this.sfx = new sound("audio/place_item.wav");
   }
 
   draw() {
@@ -125,11 +123,11 @@ class Wine {
   action() {
     if (player.holding == null) {
       player.holding = this;
-      this.sfx.play();
+      sounds.place_item.play();
       makeToast(this.description);
     } else if (player.holding == this) {
       player.holding = null;
-      this.sfx.play();
+      sounds.place_item.play();
     }
   }
 
@@ -139,10 +137,95 @@ class Wine {
   }
 }
 
+class Mob {
+  constructor(x, y, images, behavior, speed, rarity, desc) {
+    this.x = x;
+    this.y = y;
+    this.behavior = behavior;
+    this.speed = speed;
+    this.target = {x: x, y: y};
+    this.width = 64;
+    this.height = 64;
+    this.sprites = images;
+    this.image = this.sprites.front;
+    this.hp = 4;
+    this.rarity = rarity;
+    this.type = "mob";
+    this.description = desc
+  }
+
+  update() {
+    if (this.hp <= 0) {
+      this.image = this.sprites.dead;
+      return;
+    }
+    // TODO: turn this knob
+    if (Math.random() < 0.1) {
+      this.target = this.behavior.update(this)
+    }
+    if (this.x < this.target.x) {
+      this.x += this.speed;
+    }
+    if (this.x > this.target.x) {
+      this.x -= this.speed;
+    }
+    if (this.y < this.target.y) {
+      this.y += this.speed;
+    }
+    if (this.y > this.target.y) {
+      this.y -= this.speed;
+    }
+  }
+
+  draw() {
+    ctx.drawImage(this.image, this.x, this.y);
+    // for debugging
+    /*
+    ctx.strokeStyle = "red";
+    ctx.beginPath();
+    ctx.arc(this.target.x, this.target.y, 5, 0, 2*Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.target.x, this.target.y);
+    ctx.stroke();
+    */
+  }
+
+  drawLittle() {
+    ctx.drawImage(this.image, 0, 0, this.image.width, this.image.height, this.x, this.y, this.image.width*0.3, this.image.height*0.3);
+  }
+
+  action() {
+    let pow = ["POW!", "BIFF!", "BOOP!", "BLAM!", "PUNCH!", "POWER MOVE!"];
+    if (player.holding == null && this.hp > 0) { // player punches the mob
+      sounds.place_item.play();
+      this.hp--;
+      let i = randBetween(Math.random, 0, pow.length);
+      makeToast(pow[i]);
+    } else if (player.holding !== null && this.hp > 0) { //player feeds the mob
+      sounds.place_item.play();
+      this.hp++;
+      player.holding = null;
+      // disappear the dropped item
+    } else if (player.holding == null && this.hp <= 0) { //player picks up the corpse
+      player.holding = this;
+      makeToast(this.description);
+    } else if (player.holding == this) { //player drops the corpse
+      player.holding = null;
+    }
+  }
+
+  move(){ //move with player
+    this.x = player.x + 30;
+    this.y = player.y + 40;
+  }
+}
+
 // Stuff that have action and draw methods, but that the player may not pick up.
 // Assumes sprite sheets 1*T high, constructor expects an x value to start clip.
 class StaticInteractable {
-  constructor (x, y, width, height, image, slice, type, description) {
+  constructor(x, y, width, height, image, slice, type, description) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -152,7 +235,6 @@ class StaticInteractable {
     this.type = type;
     this.description = description;
     this.type = type;
-    //this.sfx = new sound("audio/place_item.wav");
   }
 
   draw() {
@@ -335,21 +417,18 @@ class WineMaker {
 // The launch thruster is responsible for tracking fuel and launching the
 // player into space.
 class LaunchThruster {
-  //new LaunchThruster(-79, 22, 50, 50) ???? where are these magic numbers.
   constructor (x, y, width, height) {
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
+    this.width = 52;
+    this.height = 17*3;
     this.sprite = fuel;
-    this.fuel = 0; // 3
+    this.fuel = 3;
   }
 
   draw() {
     for (var i = 0; i < this.fuel; i++) {
-      ctx.drawImage(this.sprite, this.x + 3, this.y + this.height - (i+1) * this.height/3, this.width - 5, this.height / 3-8);
-      //ctx.rect(this.x + 3, this.y + this.height - (i+1) * this.height / 3 + 5, this.width - 5, this.height / 3 - 8);
-      //TODO fix this!
+      ctx.drawImage(this.sprite, this.x, this.y + this.height - (i+1) * this.height/3, this.width, this.height / 3);
     }
   }
 
@@ -357,7 +436,7 @@ class LaunchThruster {
     if (player.holding === null && this.fuel > 0 && currentState.space_state) {
       console.log("Launch!");
       this.fuel -= 1;
-      //transitionToState(currentState.space_state); //RL DEBUG
+      transitionToState(currentState.space_state);
     } else if (player.holding !== null && this.fuel < 3) {
       console.log("Refuel!");
       this.fuel += 1;
@@ -423,7 +502,7 @@ class Splash {
   }
 }
 
-// A FloatingPlanet is visible in sspace, and is
+// A FloatingPlanet is visible in space, and is
 // responsible for getting the player from space to one particular planet.
 class FloatingPlanet {
   constructor (seed_string, x, y, r, space_state) {
@@ -617,10 +696,11 @@ class Space {
 }
 
 class Underworld {
-  constructor(overworld, rng) { //maybe some ctx translation info??
+
+  constructor(overworld, rng, ground) {
     this.overworld = overworld;
     this.rng = rng;
-    this.ground = "rgb(0,0,0)"; //TODO inherit planet ground color; darken it up
+    this.ground = ground;
     this.terrain = terrain_sheet1;
     this.stuff = [];
     this.world =
@@ -640,12 +720,77 @@ class Underworld {
         , 64
         , 64
         , stairs
-        , randBetween(this.rng, 0, 4) * 64
+        , 0 // randBetween(this.rng, 0, 4) * 64 (for use with 4x64 sheet)
         , "stair"
         , "A way up!"
         )
       )
     }
+    var behavior_list = [
+      new PursuePlayerBehavior(),
+      new SimpleFleeBehavior(),
+      new FleeBehavior()
+    ];
+    var mob_descs = ["meaty", "gelatinous", "gooey", "stringy", "firm", "bouncy", "umami", "smoky", "granular", "fresh"];
+    this.mob_behavior = behavior_list[randBetween(this.rng, 0, behavior_list.length)];
+    this.mob_images = this.mobImage(this.rng);
+    this.mob_speed = randBetween(this.rng, 1, 3);
+    this.mob_rarity = randBetween(this.rng, 2, 8);
+    this.mob_desc = mob_descs[randBetween(this.rng, 0, mob_descs.length)];
+
+    for (var i = 0; i < randBetween(this.rng, 4, 10); i += 1) {
+      this.stuff.push(new Mob(
+        randBetween(this.rng, 0, this.world.width),
+        randBetween(this.rng, 0, this.world.height),
+        this.mob_images,
+        this.mob_behavior,
+        this.mob_speed,
+        this.mob_rarity,
+        this.mob_desc
+      ));
+    }
+  }
+
+  mobImage(rng){
+    let output = {};
+    let color = generateColor(this.rng);
+    let mobsvg = mySVG.cloneNode(true);
+    let layer_1 = mobsvg.querySelector("#slime_front0");
+    let layer_2 = mobsvg.querySelector("#slime_front1");
+
+    layer_1.querySelector("path").style.fill = color;
+
+    layer_1.setAttribute("transform", "scale(" + 2 + ")");
+    layer_2.setAttribute("transform", "scale(" + 2 + ")");
+
+    layer_1.style.display = "inline";
+    layer_2.style.display = "inline";
+
+    var wrap = document.createElement("div");
+    wrap.appendChild(mobsvg);
+    var front_image = new Image();
+    front_image.src = "data:image/svg+xml;base64," + window.btoa(wrap.innerHTML);
+    output.front = front_image;
+
+    let deadsvg = mySVG.cloneNode(true);
+    let layer_3 = deadsvg.querySelector("#slime_dead0");
+    let layer_4 = deadsvg.querySelector("#slime_dead1");
+
+    layer_3.querySelector("circle").style.fill = color;
+
+    layer_3.setAttribute("transform", "scale(" + 2 + ")");
+    layer_4.setAttribute("transform", "scale(" + 2 + ")");
+
+    layer_3.style.display = "inline";
+    layer_4.style.display = "inline";
+
+    var deadwrap = document.createElement("div");
+    deadwrap.appendChild(deadsvg);
+    var dead_image = new Image();
+    dead_image.src = "data:image/svg+xml;base64," + window.btoa(deadwrap.innerHTML);
+    output.dead = dead_image;
+
+    return output;
   }
 
   update() {
@@ -704,6 +849,11 @@ class Underworld {
     }
     if (new_viewport_y > 0 && new_viewport_y < this.world.height - canvas.height) {
       this.viewport.y = new_viewport_y;
+    }
+    for (var i = 0; i < this.stuff.length; i++) {
+      if (this.stuff[i].update) {
+        this.stuff[i].update();
+      }
     }
   }
 
@@ -806,7 +956,8 @@ class Planet {
     this.rng = new Math.seedrandom(this.seed_string);
     let terrains = [terrain_sheet1, terrain_sheet2, terrain_sheet3];
     this.terrain = terrains[randBetween(this.rng, 0, terrains.length)];
-    this.ground = generateColor(this.rng);
+    let grounds = this.generateGrounds();
+    this.ground = grounds.planet_ground;
     this.world =
       { width: 3 * canvas.width
       , height: 3 * canvas.height
@@ -821,7 +972,7 @@ class Planet {
       x: canvas.width * 1.5,
       y: canvas.height * 1.5
     }
-    this.underworld = new Underworld(this, this.rng, this.ground);
+    this.underworld = new Underworld(this, this.rng, grounds.underworld_ground);
     // we scatter random ingredients over the world
     this.common_ingredient_image = this.fruitImage(this.rng);
     this.common_ingredient_type = randBetween(this.rng, 2, 4);
@@ -859,6 +1010,21 @@ class Planet {
       ));
     }
   }
+
+  // generates the ground colors for the planet and the underworld
+  generateGrounds() {
+    let output = {};
+    let r = randBetween(this.rng, 20, 220);
+    let g = randBetween(this.rng, 20, 220);
+    let b = randBetween(this.rng, 20, 220);
+    output.planet_ground = "rgb(" + r + ", " + g + ", " + b + ")";
+    r = Math.floor(r/3);
+    g = Math.floor(g/3);
+    b = Math.floor(b/3);
+    output.underworld_ground = "rgb(" + r + ", " + g + ", " + b + ")";
+    return output;
+  }
+
   fruitImage(rng) {
     let fruitsvg = mySVG.cloneNode(true);
     let layer_1 = null;
@@ -943,8 +1109,20 @@ class Planet {
     player.x += player.velX;
     player.y += player.velY;
 
-    var new_viewport_x;
-    var new_viewport_y;
+    if (!isFinite(player.x)) {
+      console.log("player.x is not finite:", player.x);
+    }
+    if (!isFinite(player.y)) {
+      console.log("player.y is not finite:", player.y);
+    }
+    if (!isFinite(this.viewport.x)) {
+      console.log("this.viewport.x is not finite:", this.viewport.x);
+    }
+    if (!isFinite(this.viewport.y)) {
+      console.log("this.viewport.y is not finite:", this.viewport.y);
+    }
+    var new_viewport_x = this.viewport.x;
+    var new_viewport_y = this.viewport.y;
     if (player.x < this.viewport.x + canvas.width / 3.0) {
       new_viewport_x = player.x - canvas.width / 3.0;
     }
@@ -957,11 +1135,44 @@ class Planet {
     if (player.y > this.viewport.y + canvas.height * 2.0 / 3.0) {
       new_viewport_y = player.y - canvas.height * 2.0 / 3.0
     }
-    if (new_viewport_x > 0 && new_viewport_x < this.world.width - canvas.width) {
-      this.viewport.x = new_viewport_x;
+    if (!isFinite(new_viewport_x)) {
+      console.log("new_viewport_x is not finite:", new_viewport_x);
     }
-    if (new_viewport_y > 0 && new_viewport_y < this.world.height - canvas.height) {
-      this.viewport.y = new_viewport_y;
+    if (!isFinite(new_viewport_y)) {
+      console.log("new_viewport_y is not finite:", new_viewport_y);
+    }
+    if (new_viewport_x >= player.x) {
+      console.log("new_viewport_x is not left of the player");
+    }
+    if (new_viewport_x + canvas.width <= player.x) {
+      console.log("new viewport right edge is not right of player");
+    }
+    if (new_viewport_y >= player.y) {
+      console.log("new_viewport_y is not above of the player");
+    }
+    if (new_viewport_y + canvas.height <= player.y) {
+      console.log("new viewport bottom edge is not below the player");
+    }
+
+    this.viewport.x = Math.max(Math.min(new_viewport_x, this.world.width - canvas.width), 0);
+    this.viewport.y = Math.max(Math.min(new_viewport_y, this.world.height - canvas.height), 0);
+    if (!isFinite(this.viewport.x)) {
+      console.log("this.viewport.x  is not finite:", this.viewport.x);
+    }
+    if (!isFinite(this.viewport.y)) {
+      console.log("this.viewport.y  is not finite:", this.viewport.y);
+    }
+    if (this.viewport.x >= player.x) {
+      console.log("this.viewport.x is not left of the player");
+    }
+    if (this.viewport.x + canvas.width <= player.x) {
+      console.log("this.viewport right edge is not right of player");
+    }
+    if (this.viewport.y >= player.y) {
+      console.log("this.viewport.y is not above of the player");
+    }
+    if (this.viewport.y + canvas.height <= player.y) {
+      console.log("this.viewport bottom edge is not below the player");
     }
 
     // terrain collisions TODO
@@ -1379,7 +1590,7 @@ var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
-let currentState = new Planet("SnooSnoo", null); //RL DEBUG new Splash();
+let currentState = new Splash(); //DEBUG new Planet("xkcd2", null);
 let keys = [];
 
 let player = {
@@ -1395,9 +1606,9 @@ let player = {
 }
 let player_frame = 0;
 
-let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
-let wine_maker = new WineMaker(40, 50, 55, 25);
-currentState.addShipStuff([player, launch_thruster, wine_maker]);
+//let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
+//let wine_maker = new WineMaker(40, 50, 55, 25);
+// currentState.addShipStuff([player, launch_thruster, wine_maker]);
 
 player.draw = function () { //TODO needs global player_frame
   var xarg = 0;
@@ -1438,6 +1649,22 @@ let shipimage = null;
 }());
 let message = "hello world";
 let message_display_frames_remaining = 150;
+let sounds = {
+  place_item: new sound("audio/place_item.wav"),
+};
+function play_random_music() {
+  switch (randBetween(Math.random, 1, 5)) {
+    case 1: document.getElementById("SSU-1").play(); break;
+    case 2: document.getElementById("SSU-2").play(); break;
+    case 3: document.getElementById("SSU-3").play(); break;
+    case 4: document.getElementById("SSU-4").play(); break;
+  }
+}
+document.getElementById("SSU-1").addEventListener("ended", play_random_music);
+document.getElementById("SSU-2").addEventListener("ended", play_random_music);
+document.getElementById("SSU-3").addEventListener("ended", play_random_music);
+document.getElementById("SSU-4").addEventListener("ended", play_random_music);
+play_random_music();
 // END GLOBALS GLOBALS GLOBALS
 
 function makeToast(newToast) { // AM I HAVING A STROKE!?
@@ -1470,7 +1697,9 @@ function transitionToState(destinationState) {
 
 function frame() {
   if (help_mode) {
-    ctx.fillStyle="010009";
+    // ctx.fillStyle="010009";
+    currentState.draw();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(help, canvas.width/2-768/2, canvas.height/2-300);
   } else {
