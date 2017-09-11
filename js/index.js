@@ -86,7 +86,7 @@ class Ingredient {
     if (player.holding == null) {
       player.holding = this;
       sounds.place_item.play();
-      makeToast(this.description);
+      makeToast("A " + this.description + " foraged fruit.");
     } else if (player.holding == this) {
       player.holding = null;
       sounds.place_item.play();
@@ -124,7 +124,7 @@ class Wine {
     if (player.holding == null) {
       player.holding = this;
       sounds.place_item.play();
-      makeToast(this.description);
+      makeToast(this.name + ": " + this.description);
     } else if (player.holding == this) {
       player.holding = null;
       sounds.place_item.play();
@@ -210,7 +210,7 @@ class Mob {
       // disappear the dropped item
     } else if (player.holding == null && this.hp <= 0) { //player picks up the corpse
       player.holding = this;
-      makeToast(this.description);
+      makeToast("A defeated monster that seems " + this.description);
     } else if (player.holding == this) { //player drops the corpse
       player.holding = null;
     }
@@ -280,7 +280,7 @@ class WineMaker {
     this.y = y;
     this.width = width;
     this.height = height;
-    this.rng = new Math.seedrandom("winemakingfun");
+    this.rng = Math.random;
     this.ingredients = [];
     this.wine = null;
     this.sfx = new sound("audio/winemaking.wav");
@@ -352,14 +352,14 @@ class WineMaker {
     let possibleDescriptions =
       [ "A # & wine with # characteristics and a # nose. $."
       , "The color is &, and the wine is # and #, very # on the palate. A $ wine, indeed."
-      , "Balanced #, #, with a touch of # on the palate. A rich & hue; $."
-      , "Sweetly #, with an unusual # and ripe #. The & indicated a good aging wine; $."
+      , "Balanced #, #, with a touch of # qualities on the palate. A rich & hue; $."
+      , "Sweetly #, with an unusual # and ripe # notes. The & indicated a good aging wine; $."
       , "Pure &, tastes # and #. The heady # notes improve this $ wine."
-      , "This $ wine is full of # and #, with a long, #-filled finish. A striking & color."
-      , "Concentrated # and a bright & color in the glass. The # and # enhance this $ wine."
-      , "A classic & wine, bursting with #, #, and # flavor. $."
-      , "A strong # wine, with a soft & color. Flavors # and # in this $ wine."
-      , "A hint of springtime # in this sprightly, & wine. Delicious # and #. $."
+      , "This $ wine is full of # and # body, with a long, #-filled finish. A striking & color."
+      , "Concentrated # taste and a bright & color in the glass. The # and # qualities enhance this $ wine."
+      , "A classic & wine, bursting with #, #, and # flavor. A $ wine."
+      , "A strong # wine, with a soft & color. Flavors of # and # notes in this $ wine."
+      , "A hint of springtime # tastes in this sprightly, & wine. Delicious # and # aromas; $."
       ],
       descs = [a.description, b.description, c.description];
     let description = possibleDescriptions[randBetween(this.rng, 0, possibleDescriptions.length)];
@@ -377,6 +377,7 @@ class WineMaker {
       console.log("Picking up wine!");
       this.sfx.play();
       naming_mode = true;
+      document.querySelector("#wine_description").innerHTML = this.wine.description;
       document.querySelector("#wine_naming_box").style.display = "inline";
       var that = this;
       document.querySelector("#wine_button").onclick = function (e) {
@@ -867,7 +868,7 @@ class Underworld {
     ctx.save();
     ctx.translate(-1 * this.viewport.x, -1 * this.viewport.y);
 
-    // draw terrain TODO
+    // draw terrain
     for (var row = 0; row < this.world.height/T; row++) {
       for (var col = 0; col < this.world.width/T; col++) {
         if (this.viewMap[row][col] == 'flat') {
@@ -1175,7 +1176,7 @@ class Planet {
       console.log("this.viewport bottom edge is not below the player");
     }
 
-    // terrain collisions TODO
+    // terrain collisions
     let collision_type = this.collideWithMap(player);
     if (collision_type == "hole") {
       console.warn("FALLING THROUGH")
@@ -1407,13 +1408,19 @@ class Shelf {
     } else if (player.holding === null && this.data.length > 0) {
       // viewing
       this.viewWine(i);
-      var listnode = document.createElement("ul");
+      var tnode = document.createElement("table");
+      var header = tnode.createTHead();
+      var header_row = header.insertRow();
+      header_row.insertCell(0).innerHTML = "<b>Player</b>"
+      header_row.insertCell(1).innerHTML = "<b>Wine</b>"
+      header_row.insertCell(2).innerHTML = "<b>Description</b>"
       for (var i = 0; i < this.data.length; i++) {
-        var itemnode = document.createElement("li");
-        itemnode.appendChild(document.createTextNode("Player: " + this.data[i].player + "  Wine: " + this.data[i].wine));
-        listnode.appendChild(itemnode);
+        var row = tnode.insertRow(i+1);
+        row.insertCell(0).innerHTML = this.data[i].player;
+        row.insertCell(1).innerHTML = this.data[i].wine;
+        row.insertCell(2).innerHTML = "some dummy description"; // this.data[i].description;
       }
-      displayInfoText(listnode);
+      displayInfoText(tnode);
     }
   }
 }
@@ -1575,10 +1582,14 @@ let descs = [
 ]
 
 function displayInfoText(s) {
+  let n = document.querySelector("#text_display");
+  while (n.hasChildNodes()) {
+    n.removeChild(n.lastChild);
+  }
   document.querySelector("#text_display_box").style.display = "inline";
-  document.querySelector("#text_display").appendChild(s);
+  n.appendChild(s);
   document.querySelector("#text_box_button").onclick = function (e) {
-    document.querySelector("#text_display").innerHTML = "";
+    n.innerHTML = "";
     document.querySelector("#text_display_box").style.display = "none";
   }
 }
@@ -1605,10 +1616,6 @@ let player = {
   sprite: player_static
 }
 let player_frame = 0;
-
-//let launch_thruster = new LaunchThruster(-79, 22, 50, 50);
-//let wine_maker = new WineMaker(40, 50, 55, 25);
-// currentState.addShipStuff([player, launch_thruster, wine_maker]);
 
 player.draw = function () { //TODO needs global player_frame
   var xarg = 0;
@@ -1672,19 +1679,41 @@ function makeToast(newToast) { // AM I HAVING A STROKE!?
   message_display_frames_remaining = 150;
 }
 
+function wordWrap( text, width ) {
+    var lines = [];
+    var words = text.split(' ');
+    var current_line = '';
+    for (var i = 0; i < words.length; i += 1) {
+      var word = words[i];
+      if (ctx.measureText(current_line + ' ' + word).width > width) {
+        lines.push(current_line);
+        current_line = word;
+      } else {
+        current_line = current_line + ' ' + word;
+      }
+    }
+    lines.push(current_line);
+    return lines;
+}
+
 function drawToast() {
+  ctx.font = "12px sans-serif";
   if (message_display_frames_remaining > 0) {
+    let toast_x = canvas.width * 0.8, toast_y = canvas.height * 0.9, toast_w = 203, toast_h = 60;
     if (message_display_frames_remaining > 50) {
       ctx.fillStyle = "black";
-      ctx.fillRect(canvas.width * 0.8, canvas.height * 0.9, canvas.width, canvas.height);
+      ctx.fillRect(toast_x, toast_y, toast_w, toast_h);
       ctx.fillStyle = "white";
-      ctx.fillText(message, canvas.width * 0.85, canvas.height * 0.95)
     } else {
       var f = message_display_frames_remaining / 50;
       ctx.fillStyle = "rgba(0, 0, 0, " + f + ")";
-      ctx.fillRect(canvas.width * 0.8, canvas.height * 0.9, canvas.width, canvas.height);
+      ctx.fillRect(toast_x, toast_y, toast_w, toast_h);
       ctx.fillStyle = "rgba(255, 255, 255, " + f + ")";
-      ctx.fillText(message, canvas.width * 0.85, canvas.height * 0.95)
+    }
+    var lines = wordWrap(message, toast_w - 20);
+    var lineHeight = ctx.measureText("M").width * 1.2;
+    for (var i = 0; i < lines.length; i += 1) {
+      ctx.fillText(lines[i], toast_x + 10, toast_y + lineHeight * (i+1));
     }
     message_display_frames_remaining--;
   }
