@@ -86,7 +86,11 @@ class Ingredient {
     if (player.holding == null) {
       player.holding = this;
       sounds.place_item.play();
-      makeToast("A " + this.description + " foraged fruit.");
+      if (player.hp <= 0) {
+        makeToast("A " + this.description + " foraged fruit.\nPress [Q] to eat it and restore health.");
+      } else {
+        makeToast("A " + this.description + " foraged fruit.");
+      }
     } else if (player.holding == this) {
       player.holding = null;
       sounds.place_item.play();
@@ -124,7 +128,11 @@ class Wine {
     if (player.holding == null) {
       player.holding = this;
       sounds.place_item.play();
-      makeToast(this.name + ": " + this.description);
+      if (player.hp <= 0) {
+        makeToast(this.name + ": " + this.description + "\nPress [Q] to drink it and restore health.");
+      } else {
+        makeToast(this.name + ": " + this.description);
+      }
     } else if (player.holding == this) {
       player.holding = null;
       sounds.place_item.play();
@@ -175,6 +183,10 @@ class Mob {
     if (this.y > this.target.y) {
       this.y -= this.speed;
     }
+
+    if (dist(this, this.target) < 10 && this.target.x == player.x && player.hp > 0) {
+      player.hp--;
+    }
   }
 
   draw() {
@@ -210,7 +222,12 @@ class Mob {
       // disappear the dropped item
     } else if (player.holding == null && this.hp <= 0) { //player picks up the corpse
       player.holding = this;
-      makeToast("A defeated monster that seems " + this.description);
+      if (player.hp <= 0) {
+        makeToast("A defeated monster that seems " + this.description + "\nPress [Q] to drink it and restore health.");
+      } else {
+        makeToast("A defeated monster that seems " + this.description);
+      }
+
     } else if (player.holding == this) { //player drops the corpse
       player.holding = null;
     }
@@ -501,6 +518,10 @@ class Splash {
       }
     }
   }
+
+  nom() {
+    //nothing
+  }
 }
 
 // A FloatingPlanet is visible in space, and is
@@ -551,12 +572,15 @@ class FloatingPlanet {
   draw() {
     ctx.drawImage(this.image, this.x - 100 * this.radius / 67, this.y - 133 * this.radius / 67);
   }
+
   action() {
     console.log("going down to ", this.seed_string);
     transitionToState(this.destination_planet);
   }
 
-
+  nom() {
+    //nothing
+  }
 }
 
 class Space {
@@ -668,6 +692,19 @@ class Space {
     }
     if (found !== null) {
       this.native_space_stuff[found].action();
+    }
+  }
+
+  nom() {
+    player.hp++;
+    removeIngredient(player.holding);
+    player.holding = null;
+  }
+
+  removeIngredient(ingredient) {
+    var index = this.stuff.indexOf(ingredient);
+    if (index > -1) {
+      this.stuff.splice(index, 1)
     }
   }
 
@@ -795,6 +832,11 @@ class Underworld {
   }
 
   update() {
+    if (player.hp <= 0) {
+      player.speed = 1.5;
+    } else {
+      player.speed = 3;
+    }
     // terrain collisions TODO
     for (var i = 0; i < this.stairs; i++) {
       if (colCheck(player, i)) {
@@ -897,6 +939,14 @@ class Underworld {
     }
     ctx.restore();
 
+    for (var p = 0; p < 3; p++) {
+      if (p < player.hp) {
+        ctx.drawImage(heart_filled, 30*p+10, 10)
+      } else {
+        ctx.drawImage(heart_outline, 30*p+10, 10)
+      }
+    }
+
   }
 
   action() {
@@ -918,6 +968,12 @@ class Underworld {
       // only if there is no other thing to do
       player.holding.action();
     }
+  }
+
+  nom() {
+    player.hp++;
+    removeIngredient(player.holding);
+    player.holding = null;
   }
 
   addPlayer(player) {
@@ -1081,6 +1137,11 @@ class Planet {
   }
 
   update() {
+    if (player.hp <= 0) {
+      player.speed = 1.5;
+    } else {
+      player.speed = 3;
+    }
     if (keys[39] || keys[68]) {
       if (player.velX < player.speed) {
         player.velX++;
@@ -1136,45 +1197,9 @@ class Planet {
     if (player.y > this.viewport.y + canvas.height * 2.0 / 3.0) {
       new_viewport_y = player.y - canvas.height * 2.0 / 3.0
     }
-    if (!isFinite(new_viewport_x)) {
-      console.log("new_viewport_x is not finite:", new_viewport_x);
-    }
-    if (!isFinite(new_viewport_y)) {
-      console.log("new_viewport_y is not finite:", new_viewport_y);
-    }
-    if (new_viewport_x >= player.x) {
-      console.log("new_viewport_x is not left of the player");
-    }
-    if (new_viewport_x + canvas.width <= player.x) {
-      console.log("new viewport right edge is not right of player");
-    }
-    if (new_viewport_y >= player.y) {
-      console.log("new_viewport_y is not above of the player");
-    }
-    if (new_viewport_y + canvas.height <= player.y) {
-      console.log("new viewport bottom edge is not below the player");
-    }
 
     this.viewport.x = Math.max(Math.min(new_viewport_x, this.world.width - canvas.width), 0);
     this.viewport.y = Math.max(Math.min(new_viewport_y, this.world.height - canvas.height), 0);
-    if (!isFinite(this.viewport.x)) {
-      console.log("this.viewport.x  is not finite:", this.viewport.x);
-    }
-    if (!isFinite(this.viewport.y)) {
-      console.log("this.viewport.y  is not finite:", this.viewport.y);
-    }
-    if (this.viewport.x >= player.x) {
-      console.log("this.viewport.x is not left of the player");
-    }
-    if (this.viewport.x + canvas.width <= player.x) {
-      console.log("this.viewport right edge is not right of player");
-    }
-    if (this.viewport.y >= player.y) {
-      console.log("this.viewport.y is not above of the player");
-    }
-    if (this.viewport.y + canvas.height <= player.y) {
-      console.log("this.viewport bottom edge is not below the player");
-    }
 
     // terrain collisions
     let collision_type = this.collideWithMap(player);
@@ -1262,6 +1287,14 @@ class Planet {
       player.holding.draw();
     }
     ctx.restore();
+
+    for (var p = 0; p < 3; p++) {
+      if (p < player.hp) {
+        ctx.drawImage(heart_filled, 30*p+10, 10)
+      } else {
+        ctx.drawImage(heart_outline, 30*p+10, 10)
+      }
+    }
   }
 
   action() {
@@ -1284,6 +1317,13 @@ class Planet {
       player.holding.action();
     }
   }
+
+  nom() {
+    player.hp++;
+    removeIngredient(player.holding);
+    player.holding = null;
+  }
+
   getShipStuff() {
     var accumulator = [];
     for (var i = 0; i < this.stuff.length; i++) {
@@ -1613,7 +1653,8 @@ let player = {
   velX: 0,
   velY: 0,
   holding: null,
-  sprite: player_static
+  sprite: player_static,
+  hp: 3
 }
 let player_frame = 0;
 
@@ -1758,6 +1799,9 @@ document.body.addEventListener("keydown", function (e) {
     keys[e.keyCode] = true;
     if (e.keyCode == 32) {
       currentState.action();
+    } else if (e.keyCode == 81) {
+      console.log("pressed q")
+      currentState.nom();
     }
   }
 });
