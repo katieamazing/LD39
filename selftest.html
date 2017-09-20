@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="css/style.css">
+      <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed" rel="stylesheet">
+  <style>
+  .pass:before {
+      content: 'PASS: ';
+      color:  blue;
+      font-weight: bold;
+  }
+  .fail:before {
+      content: 'FAIL: ';
+      color: red;
+      font-weight: bold;
+  }
+  </style>
+</head>
+<body>
+<div id="log">
+</div>
+
+<canvas id="canvas" style="position:absolute; z-index:1"></canvas>
+<svg id="mySVG" xmlns="http://www.w3.org/2000/svg" style="display: none">
+  <g id="e_0">
+    <circle cx="10" cy="10" r="10" />
+  </g>
+  <g id="ea_1"></g>
+  <g id="ea_2"></g>
+  <g id="em_1"></g>
+  <g id="em_2"></g>
+  <g id="en_1"></g>
+  <g id="en_2"></g>
+  <g id="ep_1"></g>
+  <g id="ep_2"></g>
+  <g id="es_1"></g>
+  <g id="es_2"></g>
+  <g id="eb_1"></g>
+  <g id="eb_2"></g>
+  <g id="f1_b"><path d=""/></g>
+  <g id="f1_0"></g>
+  <g id="f1_1"></g>
+  <g id="f1_2"></g>
+  <g id="f1_3"></g>
+  <g id="f1_4"></g>
+  <g id="f2_b"><path d=""/></g>
+  <g id="f2_0"></g>
+  <g id="f2_1"></g>
+  <g id="f2_2"></g>
+  <g id="f2_3"></g>
+  <g id="f2_4"></g>
+  <g id="slime_front0">
+    <path d="M 51.568359 1.2714844 C 64.12683 3.644641 57.886841 1.3765836 51.568359 1.2714844 z "/>
+  </g>
+  <g id="slime_front1"></g>
+  <g id="slime_dead0">
+    <circle cx="10" cy="10" r="10" />
+  </g>
+  <g id="slime_dead1" style="display:none"></g>
+</svg>
+
+<script src="js/seedrandom.js"></script>
+<script src="js/map.js"></script>
+<script src="js/behaviors.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ingredient.js"></script>
+<script src="js/wine.js"></script>
+<script src="js/mob.js"></script>
+<script src="js/static_interactable.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/wormhole.js"></script>
+<script src="js/winemaker.js"></script>
+<script src="js/launch_thruster.js"></script>
+<script src="js/splash.js"></script>
+<script src="js/underworld.js"></script>
+<script src="js/planet.js"></script>
+<script src="js/floating_planet.js"></script>
+<script src="js/space.js"></script>
+<script src="js/shelf.js"></script>
+<script src="js/wine_cellar.js"></script>
+<!-- TODO <script src="js/index.js"></script> -->
+<script>
+function assert( outcome, description ) {
+  var log = document.getElementById('log');
+  var li = document.createElement('li');
+  li.className = outcome ? 'pass' : 'fail';
+  li.appendChild( document.createTextNode( description ) );
+
+  log.appendChild(li);
+}
+
+// GLOBALS GLOBALS GLOBALS
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+const T = 64; //tile size
+canvas.width = 18*T;
+canvas.height = 12*T;
+terrain_sheet1 = {};
+terrain_sheet2 = {};
+terrain_sheet3 = {};
+stairs = {};
+// GLOBALS GLOBALS GLOBALS
+
+assert( new Ingredient !== null, 'Ingredient can be constructed');
+assert( new Wine !== null, 'Wine can be constructed');
+assert( new Mob(10, 20, ["sprite"]) !== null, 'Mob can be constructed');
+assert( new Mob(10, 20, {}) !== null, 'Mob can be constructed with curly braces');
+assert( new StaticInteractable !== null, 'StaticInteractable can be constructed');
+assert( new Wormhole !== null, 'Wormhole can be constructed');
+assert( new WineMaker !== null, 'WineMaker can be constructed');
+assert( new LaunchThruster !== null, 'LaunchThruster can be constructed');
+assert( new Splash !== null, 'Splash can be constructed');
+assert( new Underworld(null, Math.random, null) !== null, 'Underworld can be constructed');
+assert( new Planet !== null, 'Planet can be constructed');
+assert( new FloatingPlanet("hello", 10, 10, 10, null) !== null, 'FloatingPlanet can be constructed');
+assert( new Space !== null, 'Space can be constructed');
+assert( new Shelf !== null, 'Shelf can be constructed');
+assert( new WineCellar !== null, 'WineCellar can be constructed');
+</script>
+</body>
+<footer>
+I'm a footer.
+</footer>
+</html>
