@@ -9,7 +9,7 @@
 // depends on DOM elements with ids player_naming_box, player_naming_button, player
 // uses global playerName
 // uses global naming_mode
-  
+
 class Splash {
   constructor(){
     this.rng = new Math.seedrandom("HiThereWineLover");
@@ -50,7 +50,8 @@ class Splash {
       document.querySelector("#player_naming_box").style.display = "inline";
       var that = this;
       document.querySelector("#player_naming_button").onclick = function (e) {
-        playerName = document.querySelector("#player").value;
+        let playerName = document.querySelector("#player").value;
+        player = new Player(playerName);
         document.querySelector("#player_naming_box").style.display = "none";
         naming_mode = false;
         var space = new Space(playerName, 0);

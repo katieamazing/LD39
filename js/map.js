@@ -136,30 +136,18 @@ function makeTypeMap(world, rng) {
       if( isTerrain( row,   col+1, typeMap[row][col], typeMap ) ) { count++; }
       if( isTerrain( row+1, col,   typeMap[row][col], typeMap ) ) { count++; }
       if (count == 0) {
-        console.log('flatten it!')
         typeMap[row][col] = 'flat';
       }
     }
   }
 
-  // for (var i = 0; i < 4; i += 1) {
-  //   for (var row = 0; row < world.height/T; row++) {
-  //     for (var col = 0; col < world.width/T; col++) {
-  //       var count = 0;
-  //       if( isTerrain( row-1, col-1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row-1, col,   typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row-1, col+1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row,   col-1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row,   col+1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row+1, col-1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row+1, col,   typeMap[row][col], typeMap ) ) { count++; }
-  //       if( isTerrain( row+1, col+1, typeMap[row][col], typeMap ) ) { count++; }
-  //       if (Math.floor(rng() * 6) > count) {
-  //         typeMap[row][col] = 'flat';
-  //       }
-  //     }
-  //   }
-  // }
+  for (var row = 0; row < world.height/T; row++) {
+    for (var col = 0; col < world.width/T; col++) {
+      if (dist({x: col * T, y: row * T}, {x: world.width * 0.5, y: world.height * 0.5}) < 250) {
+        typeMap[row][col] = 'flat';
+      }
+    }
+  }
 
   return typeMap;
 }

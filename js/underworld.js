@@ -212,7 +212,11 @@ class Underworld {
     }
     // draw stuff
     for (var i = 0; i < this.stuff.length; i++) {
-      this.stuff[i].draw();
+      var stuff = this.stuff[i];
+      if (this.viewport.x - T < stuff.x && stuff.x < this.viewport.x + canvas.width &&
+        this.viewport.y - T < stuff.y && stuff.y < this.viewport.y + canvas.width) {
+          stuff.draw();
+      }
     }
     // make sure to draw the thing the player is holding after the player,
     // so that it overlaps

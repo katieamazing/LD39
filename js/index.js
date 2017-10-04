@@ -17,13 +17,15 @@ class Player {
     this.hp = 3;
     this.name = playerName;
     this.frame = 0;
+    console.log("made a player object")
   }
   transitionToState(destination) {
     // TODO
   }
 
   draw() {
-    var xarg = 0;
+    console.log("hitting player draw call")
+    var argx = 0;
     const SMALL = 0.01;
     if (this.velX > SMALL) { //facing right, walking
       this.sprite = document.querySelector("#player_walk_R");
@@ -72,53 +74,15 @@ function displayInfoText(s) {
 
 // GLOBALS GLOBALS GLOBALS
 var playerName = "";
+var player = null;
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 const T = 64; //tile size
 canvas.width = 18*T;
 canvas.height = 12*T;
 let currentState = new Splash(); //DEBUG new Planet("xkcd2", null);
-let player = null;
 let keys = [];
-
-let player = {
-  x: -300,
-  y: -300,
-  width: 468/6,
-  height: 100,
-  speed: 3.0,
-  velX: 0,
-  velY: 0,
-  holding: null,
-  sprite: player_static,
-  hp: 3
-}
 let player_frame = 0;
-
-player.draw = function () { //TODO needs global player_frame
-  var xarg = 0;
-  const SMALL = 0.01;
-  if (player.velX > SMALL) { //facing right, walking
-    player.sprite = document.querySelector("#player_walk_R");
-    argx = player_frame*player.width;
-  } else if (player.velX < -SMALL) { //facing left, walking
-    player.sprite = document.querySelector("#player_walk_L");
-    argx = player_frame*player.width;
-  } else { //standing
-    player.sprite = document.querySelector("#player_static");
-    argx = 5*player.width;
-  }
-
-  ctx.drawImage(player.sprite, argx, 0, player.width, player.height, player.x, player.y, player.width, player.height);
-  // debug visualization
-  ctx.beginPath();
-  ctx.rect(this.x, this.y, this.width, this.height);
-  //if (colCheck(this, {x: currentState.ship.x - 68*1.5, y: currentState.ship.y, width: 68*1.5*2, height: 55*1.5}) || pointInEllipse(this, currentState.ship)) {
-  //  ctx.fillStyle = "red";
-  //} else {
-  ctx.strokeStyle = "red";
-  ctx.stroke();
-};
 
 let naming_mode = false;
 let help_mode = false;
