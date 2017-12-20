@@ -40,13 +40,13 @@ class Player {
 
     ctx.drawImage(this.sprite, argx, 0, this.width, this.height, this.x, this.y, this.width, this.height);
     // debug visualization
-    ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
+    //ctx.beginPath();
+    //ctx.rect(this.x, this.y, this.width, this.height);
     //if (colCheck(this, {x: currentState.ship.x - 68*1.5, y: currentState.ship.y, width: 68*1.5*2, height: 55*1.5}) || pointInEllipse(this, currentState.ship)) {
     //  ctx.fillStyle = "red";
     //} else {
-    ctx.strokeStyle = "red";
-    ctx.stroke();
+    //ctx.strokeStyle = "red";
+    //ctx.stroke();
   }
 }
 

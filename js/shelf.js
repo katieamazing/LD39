@@ -18,8 +18,9 @@ class Shelf {
     var data = new FormData();
     data.append( "shelf_number", JSON.stringify( shelf_number ));
 
-    fetch("https://ktld39.webscript.io/get_list",
-    { method: "POST", body: data })
+    var proxyUrl = "https://cors-anywhere.herokuapp.com/",
+      targetURL = "https://katieamazing.pythonanywhere.com/sendwines"
+    fetch(proxyUrl + targetURL)
     .then(function(response) {
       console.log(response);
       return response.json();
@@ -37,7 +38,9 @@ class Shelf {
     data.append( "wine", wine);
     data.append( "shelf_number", JSON.stringify( shelf_number ) );
 
-    fetch("https://ktld39.webscript.io/add_wine",
+    var proxyUrl = "https://cors-anywhere.herokuapp.com/",
+      targetURL = "https://katieamazing.pythonanywhere.com/uploadwine"
+    fetch(proxyUrl + targetURL,
     { method: "POST", body: data })
     .then(function(res){
       console.log(res);
@@ -74,6 +77,9 @@ class Shelf {
       header_row.insertCell(1).innerHTML = "<b>Wine</b>"
       header_row.insertCell(2).innerHTML = "<b>Description</b>"
       for (var i = 0; i < this.data.length; i++) {
+        if ( this.data[i] === null ) {
+          continue;
+        }
         var row = tnode.insertRow(i+1);
         row.insertCell(0).innerHTML = this.data[i].player;
         row.insertCell(1).innerHTML = this.data[i].wine;

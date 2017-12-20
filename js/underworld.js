@@ -113,13 +113,36 @@ class Underworld {
     return output;
   }
 
+  collideWithMap(to_test) {
+    let collision_type = "flat";
+    let collision_area = 0;
+    let collision_row = null;
+    let collision_col = null;
+    for (var row = 0; row < this.world.height/T; row++) {
+      for (var col = 0; col < this.world.width/T; col++) {
+        if (this.typeMap[row][col] == "flat") {
+          // no collision
+        } else {
+          let area = colArea(to_test, {x: col*T, y: row*T, width: T, height: T});
+          if (area > collision_area) {
+            collision_type = this.typeMap[row][col];
+            area = collision_area;
+            collision_row = row;
+            collision_col = col;
+          }
+        }
+      }
+    }
+    return collision_type;
+  }
+
   update() {
     if (player.hp <= 0) {
       player.speed = 1.5;
     } else {
       player.speed = 3;
     }
-    // terrain collisions TODO
+
     for (var i = 0; i < this.stairs; i++) {
       if (colCheck(player, i)) {
         console.warn("GOING UP")
@@ -178,6 +201,45 @@ class Underworld {
     for (var i = 0; i < this.stuff.length; i++) {
       if (this.stuff[i].update) {
         this.stuff[i].update();
+      }
+    }
+
+    // terrain collisions
+    let collision_type = this.collideWithMap(player);
+    if (collision_type == "hole") {
+      console.warn("FALLING THROUGH")
+      this.transferDown();
+      return
+    } else if (collision_type != "flat") {
+      // player's in a rock, let's scoot the player =P
+      console.log("player's in a rock, let's scoot the player =P");
+      let xs = [
+        Math.floor(player.x / T) * T, player.x, Math.ceil(player.x / T) * T,
+        Math.floor((player.x + player.width) / T) * T - player.width, Math.ceil((player.x + player.width) / T) * T - player.width
+      ];
+      let ys = [
+        Math.floor(player.y / T) * T, player.y, Math.ceil(player.y / T) * T,
+        Math.floor((player.y + player.height) / T) * T - player.height, Math.ceil((player.y + player.height) / T) * T - player.height
+      ];
+      let bestDist = Infinity;
+      let best = null;
+      for (var i = 0; i < xs.length; i++) {
+        let candidate_x = xs[i];
+        for (var j = 0; j < ys.length; j++) {
+          let candidate_y = ys[j];
+          let candidate = {x: candidate_x, y: candidate_y, width: 468/6, height: 100};
+          if (this.collideWithMap(candidate) == "flat") {
+            let d = dist(player, candidate);
+            if (d < bestDist) {
+              best = candidate;
+              bestDist = d;
+            }
+          }
+        }
+      }
+      if (best) {
+        player.x = best.x;
+        player.y = best.y;
       }
     }
   }
